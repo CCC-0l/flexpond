@@ -370,6 +370,22 @@ public final class AppViewModel: ObservableObject {
         ouraSyncing = false
     }
 
+    /// Refetches using the token already in Keychain — the "Sync" action on
+    /// the connected status bar. Distinct from `connectOura()`, which needs
+    /// a freshly-typed token; this needs none, so it doesn't reopen the form.
+    public func syncOura() async {
+        guard ouraService.loadToken() != nil else { return }
+        ouraSyncing = true
+        ouraSyncError = nil
+        do {
+            let day = try await ouraService.fetchLatestReadiness()
+            applyOuraDay(day)
+        } catch {
+            ouraSyncError = (error as? LocalizedError)?.errorDescription ?? "Couldn't refresh from Oura — try again."
+        }
+        ouraSyncing = false
+    }
+
     public func disconnectOura() {
         ouraService.deleteToken()
         ouraConnected = false

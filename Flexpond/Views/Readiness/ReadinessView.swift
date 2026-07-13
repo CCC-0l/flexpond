@@ -41,9 +41,10 @@ private struct OuraStatusBar: View {
                         .foregroundStyle(Theme.textSecondary)
                 }
                 Spacer()
-                Button("Sync") { vm.openOuraConnect() }
+                Button(vm.ouraSyncing ? "Syncing…" : "Sync") { Task { await vm.syncOura() } }
                     .font(.label(11))
                     .foregroundStyle(Theme.accent)
+                    .disabled(vm.ouraSyncing)
                 Button("Disconnect") { vm.disconnectOura() }
                     .font(.label(11))
                     .foregroundStyle(Theme.textTertiary)
@@ -54,6 +55,12 @@ private struct OuraStatusBar: View {
             .background(Theme.card)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.good.opacity(0.25), lineWidth: 1))
+            if let error = vm.ouraSyncError {
+                Text(error)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.warning)
+                    .padding(.top, 8)
+            }
         } else {
             Button {
                 vm.openOuraConnect()
