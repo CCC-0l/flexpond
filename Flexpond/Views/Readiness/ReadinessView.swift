@@ -177,14 +177,18 @@ private struct OuraConnectedContent: View {
                 }
             }
 
-            Text("Live data synced from your Oura Ring — \(vm.ouraDay ?? "").")
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.textSecondary)
-                .padding(14)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .background(Theme.accent.opacity(0.06))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.accent.opacity(0.2), lineWidth: 1))
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            VStack(alignment: .leading, spacing: 3) {
+                Text("Readiness for \(vm.ouraDay ?? "unknown date") — live data from your Oura Ring.")
+                Text("Pulled \(vm.ouraSyncedAtFormatted).")
+                    .foregroundStyle(Theme.textTertiary)
+            }
+            .font(.system(size: 12))
+            .foregroundStyle(Theme.textSecondary)
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Theme.accent.opacity(0.06))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.accent.opacity(0.2), lineWidth: 1))
+            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
     }
 }

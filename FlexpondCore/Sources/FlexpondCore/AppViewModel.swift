@@ -420,6 +420,14 @@ public final class AppViewModel: ObservableObject {
         return contributors.all.sorted { $0.score < $1.score }
     }
 
+    /// Absolute pull time, e.g. "Jul 13, 3:55 PM" — the relative
+    /// "Xm ago" line in the status bar goes stale-looking fast; this is
+    /// the unambiguous "when was this actually fetched" answer.
+    public var ouraSyncedAtFormatted: String {
+        guard let syncedAt = ouraSyncedAt else { return "" }
+        return syncedAt.formatted(date: .abbreviated, time: .shortened)
+    }
+
     public var ouraSummaryLine: String {
         guard let syncedAt = ouraSyncedAt else { return "" }
         let mins = max(0, Int(now().timeIntervalSince(syncedAt) / 60))
