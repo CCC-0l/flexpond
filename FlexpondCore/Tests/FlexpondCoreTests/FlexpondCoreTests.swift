@@ -111,10 +111,13 @@ struct FlexpondCoreTests {
         // weightKg = 81.6466, heightCm = 177.8
         // bmr = 10*81.6466 + 6.25*177.8 - 5*30 + 5 = 816.466 + 1111.25 - 150 + 5 = 1782.716
         // tdee = 1782.716 * 1.55 = 2763.21 -> targetCalories = 2763
+        // Verified against calculator.net's Mifflin-St Jeor result independently.
         #expect(targets.targetCalories == 2763)
-        #expect(targets.proteinGrams == 207) // round(2763*0.30/4)
-        #expect(targets.carbGrams == 276)    // round(2763*0.40/4)
-        #expect(targets.fatGrams == 92)      // round(2763*0.30/9)
+        // Protein anchored to bodyweight (1g/lb), not % of calories — see
+        // MacroCalculator's doc comment for why.
+        #expect(targets.proteinGrams == 180)
+        #expect(targets.fatGrams == 77)   // round(2763*0.25/9)
+        #expect(targets.carbGrams == 338) // remaining calories after protein+fat, /4
     }
 
     @Test func macroCalculatorFloorsAt1200Calories() {
@@ -122,6 +125,17 @@ struct FlexpondCoreTests {
         profile.age = DietProfile.clampedAge(profile.age)
         let targets = MacroCalculator.targets(for: profile)
         #expect(targets.targetCalories == 1200)
+    }
+
+    @Test func macroCalculatorClampsCarbsAtZeroWhenProteinAloneExceedsCalories() {
+        // A very high bodyweight at the 1200-calorie floor: protein alone
+        // (weightPounds * 4 cal) can exceed the whole calorie target, so
+        // carbs must clamp at 0 rather than go negative.
+        let profile = DietProfile(age: 90, gender: .female, heightFeet: 4, heightInches: 10, weightPounds: 600, activity: .sedentary, goal: .extremeLoss, formula: .mifflin, bodyFatPercent: 20)
+        let targets = MacroCalculator.targets(for: profile)
+        #expect(targets.targetCalories == 1200)
+        #expect(targets.proteinGrams == 600)
+        #expect(targets.carbGrams == 0)
     }
 
     @Test func macroCalculatorKatchUsesBodyFat() {

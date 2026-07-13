@@ -80,14 +80,22 @@ do {
     let profile = DietProfile(age: 30, gender: .male, heightFeet: 5, heightInches: 10, weightPounds: 180, activity: .moderate, goal: .maintain, formula: .mifflin, bodyFatPercent: 20)
     let targets = MacroCalculator.targets(for: profile)
     check(targets.targetCalories == 2763, "Mifflin male maintain -> 2763 cal")
-    check(targets.proteinGrams == 207, "protein grams from 30% cal / 4")
-    check(targets.carbGrams == 276, "carb grams from 40% cal / 4")
-    check(targets.fatGrams == 92, "fat grams from 30% cal / 9")
+    check(targets.proteinGrams == 180, "protein grams = 1g per lb bodyweight (180lb)")
+    check(targets.fatGrams == 77, "fat grams from 25% of target cal / 9")
+    check(targets.carbGrams == 338, "carb grams fill the remaining calories")
 }
 do {
     let profile = DietProfile(age: 90, gender: .female, heightFeet: 4, heightInches: 10, weightPounds: 90, activity: .sedentary, goal: .extremeLoss, formula: .mifflin, bodyFatPercent: 20)
     let targets = MacroCalculator.targets(for: profile)
     check(targets.targetCalories == 1200, "macro calculator floors at 1200 cal")
+}
+do {
+    // Very high bodyweight at the 1200-cal floor: protein alone can exceed
+    // the whole calorie target, so carbs must clamp at 0, not go negative.
+    let profile = DietProfile(age: 90, gender: .female, heightFeet: 4, heightInches: 10, weightPounds: 600, activity: .sedentary, goal: .extremeLoss, formula: .mifflin, bodyFatPercent: 20)
+    let targets = MacroCalculator.targets(for: profile)
+    check(targets.proteinGrams == 600, "protein still tracks bodyweight even at the calorie floor")
+    check(targets.carbGrams == 0, "carbs clamp at 0 rather than going negative")
 }
 check(DietProfile.clampedAge(5) == 10, "age clamps below range to the floor")
 check(DietProfile.clampedAge(150) == 100, "age clamps above range")

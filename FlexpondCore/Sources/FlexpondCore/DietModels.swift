@@ -152,8 +152,21 @@ public struct MacroTargets: Sendable, Equatable {
     public let fatGrams: Int
 }
 
-/// Pure macro math, transcribed exactly from the mockup's `renderVals()`
-/// diet section (`dc.html` lines 1503-1516).
+/// BMR/TDEE/calorie-target math is transcribed exactly from the mockup's
+/// `renderVals()` diet section (`dc.html` lines 1503-1516) and verified
+/// against a third-party TDEE calculator (calculator.net) byte-for-byte.
+///
+/// The macro *split*, however, deliberately diverges from the mockup's
+/// fixed 30% protein / 40% carb / 30% fat of total calories. A %-of-calories
+/// split is the wrong tool for an app built around structured lifting
+/// programs: it undershoots protein on a cut (exactly when preserving
+/// muscle matters most) and swings protein arbitrarily high or low on a
+/// bulk, since it's tracking total calories rather than the thing that
+/// actually determines protein need — bodyweight. Protein here is instead
+/// anchored at 1g per lb of bodyweight (squarely inside the ISSN's
+/// recommended 0.7–1g/lb range for resistance-trained individuals,
+/// regardless of goal), fat holds a 25% floor of total calories for
+/// hormone health, and carbs fill whatever calories remain.
 public enum MacroCalculator {
     public static func targets(for profile: DietProfile) -> MacroTargets {
         let weightKg = Double(profile.weightPounds) * 0.453592
@@ -170,9 +183,13 @@ public enum MacroCalculator {
 
         let tdee = bmr * profile.activity.multiplier
         let targetCalories = max(1200, Int((tdee + Double(profile.goal.calorieAdjustment)).rounded()))
-        let proteinGrams = Int((Double(targetCalories) * 0.30 / 4).rounded())
-        let carbGrams = Int((Double(targetCalories) * 0.40 / 4).rounded())
-        let fatGrams = Int((Double(targetCalories) * 0.30 / 9).rounded())
+
+        let proteinGrams = profile.weightPounds
+        let proteinCalories = Double(proteinGrams) * 4
+        let fatCalories = Double(targetCalories) * 0.25
+        let fatGrams = Int((fatCalories / 9).rounded())
+        let carbCalories = max(0, Double(targetCalories) - proteinCalories - fatCalories)
+        let carbGrams = Int((carbCalories / 4).rounded())
 
         return MacroTargets(targetCalories: targetCalories, proteinGrams: proteinGrams, carbGrams: carbGrams, fatGrams: fatGrams)
     }
