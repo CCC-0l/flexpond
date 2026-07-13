@@ -183,6 +183,42 @@ struct FlexpondCoreTests {
         #expect(focus.map(\.score) == [58, 62])
     }
 
+    @Test func ouraReadinessDecodesWithNullContributors() throws {
+        // Real Oura accounts commonly have null contributors (e.g. no HRV
+        // baseline yet) — this must not throw a DecodingError.
+        let json = """
+        {
+          "data": [
+            {
+              "day": "2026-07-13",
+              "score": 71,
+              "contributors": {
+                "activity_balance": null,
+                "body_temperature": 88,
+                "hrv_balance": null,
+                "previous_day_activity": 95,
+                "previous_night": 74,
+                "recovery_index": 80,
+                "resting_heart_rate": 89,
+                "sleep_balance": null
+              }
+            }
+          ],
+          "next_token": null
+        }
+        """.data(using: .utf8)!
+
+        let decoded = try JSONDecoder().decode(OuraReadinessResponse.self, from: json)
+        let day = try #require(decoded.data.last)
+        #expect(day.contributors.hrvBalance == nil)
+        #expect(day.contributors.all.count == 5)
+        #expect(!day.contributors.all.contains { $0.label == "HRV Balance" })
+
+        let service = OuraService()
+        let focus = service.focusContributors(for: day)
+        #expect(focus.count == 2)
+    }
+
     @Test func readinessStatusThresholds() {
         #expect(ReadinessStatus(score: 90) == .optimal)
         #expect(ReadinessStatus(score: 85) == .optimal)

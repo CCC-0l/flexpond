@@ -43,7 +43,10 @@ public struct OuraReadinessResponse: Codable, Sendable {
 
 public struct OuraReadinessDay: Codable, Sendable {
     public let day: String            // "2026-07-09"
-    public let score: Int             // 0–100 overall readiness
+    /// 0–100 overall readiness. Nullable per Oura's actual API — a day can
+    /// have insufficient data to compute an overall score even though a
+    /// record exists for it.
+    public let score: Int?
     public let contributors: OuraContributors
     public let temperatureDeviation: Double?
 
@@ -52,7 +55,7 @@ public struct OuraReadinessDay: Codable, Sendable {
         case temperatureDeviation = "temperature_deviation"
     }
 
-    public init(day: String, score: Int, contributors: OuraContributors, temperatureDeviation: Double? = nil) {
+    public init(day: String, score: Int?, contributors: OuraContributors, temperatureDeviation: Double? = nil) {
         self.day = day
         self.score = score
         self.contributors = contributors
@@ -63,15 +66,21 @@ public struct OuraReadinessDay: Codable, Sendable {
 /// The 8 contributor scores (each 0–100). These map 1:1 to the metric
 /// cards on the Readiness screen. "Focus today" = the two LOWEST scores
 /// (computed client-side; Oura does not provide this).
+///
+/// Every field is optional: Oura returns `null` for any contributor it
+/// doesn't have enough data to compute for that day (e.g. HRV balance or
+/// sleep balance need historical baselines a newer ring/account may not
+/// have yet) — a non-optional model here breaks decoding the first time a
+/// real account hits that, which is very common.
 public struct OuraContributors: Codable, Sendable, Equatable {
-    public let activityBalance: Int
-    public let bodyTemperature: Int
-    public let hrvBalance: Int
-    public let previousDayActivity: Int
-    public let previousNight: Int       // = the "Sleep" card
-    public let recoveryIndex: Int
-    public let restingHeartRate: Int
-    public let sleepBalance: Int
+    public let activityBalance: Int?
+    public let bodyTemperature: Int?
+    public let hrvBalance: Int?
+    public let previousDayActivity: Int?
+    public let previousNight: Int?       // = the "Sleep" card
+    public let recoveryIndex: Int?
+    public let restingHeartRate: Int?
+    public let sleepBalance: Int?
 
     enum CodingKeys: String, CodingKey {
         case activityBalance = "activity_balance"
@@ -84,7 +93,7 @@ public struct OuraContributors: Codable, Sendable, Equatable {
         case sleepBalance = "sleep_balance"
     }
 
-    public init(activityBalance: Int, bodyTemperature: Int, hrvBalance: Int, previousDayActivity: Int, previousNight: Int, recoveryIndex: Int, restingHeartRate: Int, sleepBalance: Int) {
+    public init(activityBalance: Int?, bodyTemperature: Int?, hrvBalance: Int?, previousDayActivity: Int?, previousNight: Int?, recoveryIndex: Int?, restingHeartRate: Int?, sleepBalance: Int?) {
         self.activityBalance = activityBalance
         self.bodyTemperature = bodyTemperature
         self.hrvBalance = hrvBalance
@@ -95,16 +104,20 @@ public struct OuraContributors: Codable, Sendable, Equatable {
         self.sleepBalance = sleepBalance
     }
 
-    /// Ordered list for rendering: (displayLabel, score)
+    /// Ordered list for rendering: (displayLabel, score) — only the
+    /// contributors Oura actually returned a value for today.
     public var all: [(label: String, score: Int)] {
-        [("Resting Heart Rate", restingHeartRate),
-         ("HRV Balance", hrvBalance),
-         ("Body Temperature", bodyTemperature),
-         ("Recovery Index", recoveryIndex),
-         ("Sleep", previousNight),
-         ("Sleep Balance", sleepBalance),
-         ("Previous Day Activity", previousDayActivity),
-         ("Activity Balance", activityBalance)]
+        let entries: [(String, Int?)] = [
+            ("Resting Heart Rate", restingHeartRate),
+            ("HRV Balance", hrvBalance),
+            ("Body Temperature", bodyTemperature),
+            ("Recovery Index", recoveryIndex),
+            ("Sleep", previousNight),
+            ("Sleep Balance", sleepBalance),
+            ("Previous Day Activity", previousDayActivity),
+            ("Activity Balance", activityBalance),
+        ]
+        return entries.compactMap { label, score in score.map { (label, $0) } }
     }
 }
 
@@ -125,7 +138,7 @@ public struct OuraSnapshot: Codable, Sendable, Equatable {
     }
 
     public init(day: OuraReadinessDay, syncedAt: Date) {
-        self.score = day.score
+        self.score = day.score ?? 0
         self.contributors = day.contributors
         self.day = day.day
         self.syncedAt = syncedAt
@@ -155,6 +168,7 @@ public enum OuraError: LocalizedError {
     case badURL
     case httpError(Int)     // 401 = bad/expired token
     case noData
+    case decodingFailed(String)
 
     public var errorDescription: String? {
         switch self {
@@ -165,6 +179,7 @@ public enum OuraError: LocalizedError {
                 ? "Oura rejected the token — generate a new one and reconnect."
                 : "Oura API error (HTTP \(code))."
         case .noData: return "Oura returned no readiness data for the date range."
+        case .decodingFailed(let detail): return "Got a response from Oura but couldn't read it (\(detail))."
         }
     }
 }
@@ -244,9 +259,19 @@ public final class OuraService: Sendable {
             throw OuraError.httpError(http.statusCode)
         }
 
-        let decoded = try JSONDecoder().decode(OuraReadinessResponse.self, from: data)
-        guard let latest = decoded.data.last else { throw OuraError.noData }
-        return latest
+        do {
+            let decoded = try JSONDecoder().decode(OuraReadinessResponse.self, from: data)
+            // Prefer the most recent day that actually has an overall score —
+            // Oura can include a record for a day with no computed score yet.
+            guard let latest = decoded.data.last(where: { $0.score != nil }) ?? decoded.data.last else {
+                throw OuraError.noData
+            }
+            return latest
+        } catch let error as OuraError {
+            throw error
+        } catch {
+            throw OuraError.decodingFailed(error.localizedDescription)
+        }
     }
 
     /// "Focus today" = the two lowest-scoring contributors (matches the design).

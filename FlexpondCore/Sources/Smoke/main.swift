@@ -129,6 +129,38 @@ do {
     check(ReadinessStatus(score: 50) == .payAttention, "score <70 is Pay attention")
 }
 
+do {
+    // Real Oura accounts commonly have null contributors (e.g. no HRV
+    // baseline yet) — this must not throw a DecodingError.
+    let json = """
+    {
+      "data": [
+        {
+          "day": "2026-07-13",
+          "score": 71,
+          "contributors": {
+            "activity_balance": null,
+            "body_temperature": 88,
+            "hrv_balance": null,
+            "previous_day_activity": 95,
+            "previous_night": 74,
+            "recovery_index": 80,
+            "resting_heart_rate": 89,
+            "sleep_balance": null
+          }
+        }
+      ],
+      "next_token": null
+    }
+    """.data(using: .utf8)!
+    let decoded = try! JSONDecoder().decode(OuraReadinessResponse.self, from: json)
+    let day = decoded.data.last!
+    check(day.contributors.hrvBalance == nil, "null contributor decodes as nil, not a thrown error")
+    check(day.contributors.all.count == 5, "all filters out the 3 null contributors")
+    let focus = OuraService().focusContributors(for: day)
+    check(focus.count == 2, "focus still finds 2 lowest among the 5 present contributors")
+}
+
 // MARK: - AppViewModel behavior
 
 let vm = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke")!))
