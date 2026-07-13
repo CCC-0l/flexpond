@@ -37,9 +37,9 @@ do {
     check(e.setsReps == "8 × 2 @ 55-60%", "keeps trailing percentage in sets/reps")
 }
 
-// MARK: - WorkoutLibrary completeness
+// MARK: - WorkoutLibrary completeness (5 categories now: 3 lifting + HIT + MC)
 
-for category in LiftCategory.allCases {
+for category in ProgramCategory.allCases {
     for freq in TrainingFrequency.allCases {
         let variants = WorkoutLibrary.variants(for: category, frequency: freq)
         check(variants.count == 3, "\(category.rawValue) \(freq.rawValue)-day has 3 variants")
@@ -48,6 +48,7 @@ for category in LiftCategory.allCases {
         }
     }
 }
+check(ProgramCategory.allCases.count == 5, "5 program categories (BB/PL/TO/HIT/MC)")
 
 // MARK: - Schedule mapping
 
@@ -73,29 +74,84 @@ do {
     check(WorkoutSchedule.mondayIndexedWeekday(from: sunday, calendar: calendar) == 6, "Sunday maps to index 6")
 }
 
+// MARK: - MacroCalculator
+
+do {
+    let profile = DietProfile(age: 30, gender: .male, heightFeet: 5, heightInches: 10, weightPounds: 180, activity: .moderate, goal: .maintain, formula: .mifflin, bodyFatPercent: 20)
+    let targets = MacroCalculator.targets(for: profile)
+    check(targets.targetCalories == 2763, "Mifflin male maintain -> 2763 cal")
+    check(targets.proteinGrams == 207, "protein grams from 30% cal / 4")
+    check(targets.carbGrams == 276, "carb grams from 40% cal / 4")
+    check(targets.fatGrams == 92, "fat grams from 30% cal / 9")
+}
+do {
+    let profile = DietProfile(age: 90, gender: .female, heightFeet: 4, heightInches: 10, weightPounds: 90, activity: .sedentary, goal: .extremeLoss, formula: .mifflin, bodyFatPercent: 20)
+    let targets = MacroCalculator.targets(for: profile)
+    check(targets.targetCalories == 1200, "macro calculator floors at 1200 cal")
+}
+check(DietProfile.clampedAge(5) == 10, "age clamps below range to the floor")
+check(DietProfile.clampedAge(150) == 100, "age clamps above range")
+check(DietProfile.clampedHeightInches(15) == 11, "height inches clamp to 11")
+check(DietProfile.clampedHeightInches(-3) == 0, "height inches clamp to 0")
+
+// MARK: - Oura
+
+do {
+    let json = """
+    {
+      "data": [
+        {
+          "day": "2026-07-09",
+          "score": 79,
+          "contributors": {
+            "activity_balance": 91,
+            "body_temperature": 88,
+            "hrv_balance": 62,
+            "previous_day_activity": 95,
+            "previous_night": 74,
+            "recovery_index": 80,
+            "resting_heart_rate": 89,
+            "sleep_balance": 58
+          }
+        }
+      ],
+      "next_token": null
+    }
+    """.data(using: .utf8)!
+    let decoded = try! JSONDecoder().decode(OuraReadinessResponse.self, from: json)
+    let day = decoded.data.last!
+    check(day.score == 79, "decodes Oura fixture score")
+    check(day.contributors.hrvBalance == 62, "decodes hrv_balance via snake_case CodingKeys")
+    let focus = OuraService().focusContributors(for: day)
+    check(focus.map { $0.label } == ["Sleep Balance", "HRV Balance"], "focus picks the 2 lowest-scoring contributors")
+    check(ReadinessStatus(score: 90) == .optimal, "score >=85 is Optimal")
+    check(ReadinessStatus(score: 70) == .balanced, "score >=70 is Balanced")
+    check(ReadinessStatus(score: 50) == .payAttention, "score <70 is Pay attention")
+}
+
 // MARK: - AppViewModel behavior
 
-let vm = await AppViewModel(repository: MockWorkoutRepository())
+let vm = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke")!))
 await vm.load()
 await MainActor.run {
-    vm.openCategory(.lift(.bodybuilding))
+    vm.openCategory(.program(.bodybuilding))
     vm.selectFrequency(.fourDay)
     vm.selectVariant(0)
     vm.startProgram()
     check(vm.plan.count == 1, "startProgram adds one plan entry")
     check(vm.workoutScreen == .today, "startProgram navigates to today screen")
-    check(vm.isLifting, "selected category reports as lifting")
-
-    vm.selectWeekday(0)
-    if let day = vm.selectedTrainingDay {
-        for i in 0..<day.items.count { vm.toggleExercise(i) }
-        check(vm.isSessionComplete, "checking every exercise completes the session")
-    } else {
-        check(false, "Monday should have a training day for a 4-day Bodybuilding program")
-    }
 
     check(vm.readiness?.score == 82, "readiness loads from repository")
-    check(vm.physiqueEntries.count == 3, "physique entries seed from repository")
+    check(vm.physiqueEntries.count == 6, "6 seeded physique entries with real photos")
+    check(vm.homeReadinessScore == 82, "home readiness falls back to static 82 pre-Oura-connect")
+    check(vm.homeReadinessLabel == "Primed to train", "home readiness label falls back pre-connect")
+
+    let ids = vm.physiqueEntries.map { $0.id }
+    vm.toggleCompareEntry(ids[0])
+    vm.toggleCompareEntry(ids[1])
+    check(vm.selectedEntryIDs == [ids[0], ids[1]], "compare selects first two toggled entries")
+    vm.toggleCompareEntry(ids[2])
+    check(vm.selectedEntryIDs == [ids[1], ids[2]], "compare evicts oldest selection FIFO once 2 are picked")
 }
 
 print("\nAll smoke checks passed.")

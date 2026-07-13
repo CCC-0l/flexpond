@@ -7,12 +7,10 @@ struct WorkoutDetailView: View {
     var body: some View {
         Group {
             switch vm.selectedCategory {
-            case .some(.lift):
-                LiftDetailView(vm: vm)
-            case .some(.cardio(.walk)):
+            case .some(.program):
+                ProgramDetailView(vm: vm)
+            case .some(.walk):
                 WalkDetailView(vm: vm)
-            case .some(.cardio):
-                CardioComingSoonView(categoryName: vm.selectedCategory?.displayName ?? "")
             case .none:
                 EmptyView()
             }
@@ -21,7 +19,7 @@ struct WorkoutDetailView: View {
     }
 }
 
-private struct LiftDetailView: View {
+private struct ProgramDetailView: View {
     @ObservedObject var vm: AppViewModel
 
     var body: some View {
@@ -184,28 +182,5 @@ private struct WalkDetailView: View {
                 action: vm.saveWalkGoal
             )
         }
-    }
-}
-
-private struct CardioComingSoonView: View {
-    var categoryName: String
-
-    var body: some View {
-        VStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 15, style: .continuous)
-                .fill(Theme.card)
-                .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(Theme.hairline, lineWidth: 1))
-                .frame(width: 54, height: 54)
-            Text("\(categoryName) programs")
-                .font(.system(size: 19, weight: .heavy))
-                .foregroundStyle(Theme.textPrimary)
-            Text("Cardio program builder is coming soon. The lifting categories are fully built out.")
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.textTertiary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 230)
-        }
-        .frame(maxWidth: .infinity, minHeight: 420)
-        .padding(40)
     }
 }

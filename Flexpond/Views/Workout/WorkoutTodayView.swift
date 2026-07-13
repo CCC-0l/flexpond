@@ -1,25 +1,23 @@
 import SwiftUI
 import FlexpondCore
 
+/// Read-only "here's what's scheduled" view — the redesign dropped
+/// per-exercise completion tracking entirely (no checkboxes, no "Complete
+/// session", no progress bars).
 struct WorkoutTodayView: View {
     @ObservedObject var vm: AppViewModel
-
-    private var weekScheduled: Int { vm.weekStrip.filter { !$0.isRestDay }.count }
-    private var weekDone: Int { vm.weekStrip.filter { !$0.isRestDay && $0.isDone }.count }
 
     private var dayName: String {
         let name = WorkoutSchedule.weekdayNames[vm.effectiveWeekday]
         return vm.effectiveWeekday == vm.todayWeekday ? "\(name) · Today" : name
     }
 
-    private var restRangeLabel: String {
-        if case .lift(let category) = vm.selectedCategory { return category.restRange }
-        return ""
-    }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            WeekSummaryCard(scheduled: weekScheduled, done: weekDone)
+            Text("Your program is on a fixed weekly schedule — here's what's due each day.")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.textSecondary)
+                .lineSpacing(3)
 
             DayStrip(vm: vm)
 
@@ -34,8 +32,8 @@ struct WorkoutTodayView: View {
                 Text(dayName)
                     .font(.system(size: 13))
                     .foregroundStyle(Theme.textSecondary)
-                if !restRangeLabel.isEmpty {
-                    Text("Rest \(restRangeLabel) between sets")
+                if !vm.isRestDay, !vm.restLine.isEmpty {
+                    Text(vm.restLine)
                         .font(.label(11))
                         .foregroundStyle(Theme.textTertiary)
                         .padding(.top, 2)
@@ -43,43 +41,12 @@ struct WorkoutTodayView: View {
             }
 
             if let day = vm.selectedTrainingDay {
-                SessionChecklist(vm: vm, day: day)
+                ExerciseList(items: day.items)
             } else {
                 RestDayCard()
             }
         }
         .padding(.top, 6)
-    }
-}
-
-private struct WeekSummaryCard: View {
-    var scheduled: Int
-    var done: Int
-
-    private var progress: Double { scheduled == 0 ? 0 : Double(done) / Double(scheduled) }
-
-    var body: some View {
-        VStack(spacing: 9) {
-            HStack {
-                Text("THIS WEEK")
-                    .font(.label(10))
-                    .foregroundStyle(Theme.textTertiary)
-                Spacer()
-                Text("\(done)/\(scheduled)")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(Color(hex: 0xEAF3FF))
-            }
-            GeometryReader { geo in
-                Capsule().fill(Color.white.opacity(0.08))
-                    .overlay(alignment: .leading) {
-                        Capsule().fill(Theme.accent).frame(width: geo.size.width * progress)
-                    }
-            }
-            .frame(height: 7)
-        }
-        .padding(.horizontal, 15)
-        .padding(.vertical, 13)
-        .cardBackground(radius: 14)
     }
 }
 
@@ -94,17 +61,9 @@ private struct DayStrip: View {
                         Text(day.abbreviation.prefix(1))
                             .font(.label(11, weight: .semibold))
                             .foregroundStyle(day.isSelected ? Theme.accentText : (day.isToday ? Theme.accent : Theme.textSecondary))
-                        if day.isDone {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 9, weight: .heavy))
-                                .foregroundStyle(day.isSelected ? Theme.accentText : Theme.good)
-                        } else if !day.isRestDay {
-                            Circle()
-                                .fill(day.isSelected ? Theme.accentText : Theme.accent)
-                                .frame(width: 6, height: 6)
-                        } else {
-                            Circle().fill(Color.clear).frame(width: 6, height: 6)
-                        }
+                        Circle()
+                            .fill(day.isSelected ? Theme.accentText : (day.isRestDay ? Color.white.opacity(0.28) : Theme.accent))
+                            .frame(width: 6, height: 6)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 9)
@@ -117,79 +76,29 @@ private struct DayStrip: View {
     }
 }
 
-private struct SessionChecklist: View {
-    @ObservedObject var vm: AppViewModel
-    var day: TrainingDay
-
-    private var doneCount: Int { vm.todayCompletedIndices.count }
-    private var progress: Double { day.items.isEmpty ? 0 : Double(doneCount) / Double(day.items.count) }
+private struct ExerciseList: View {
+    var items: [ExerciseEntry]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 12) {
-                GeometryReader { geo in
-                    Capsule().fill(Color.white.opacity(0.07))
-                        .overlay(alignment: .leading) {
-                            Capsule().fill(Theme.accent).frame(width: geo.size.width * progress)
-                        }
-                }
-                .frame(height: 7)
-                Text("\(doneCount)/\(day.items.count)")
-                    .font(.label(11))
-                    .foregroundStyle(Theme.textSecondary)
-                    .fixedSize()
-            }
-
-            VStack(spacing: 0) {
-                ForEach(Array(day.items.enumerated()), id: \.offset) { index, item in
-                    ExerciseRow(
-                        item: item,
-                        isDone: vm.todayCompletedIndices.contains(index),
-                        isLast: index == day.items.count - 1
-                    ) {
-                        vm.toggleExercise(index)
-                    }
-                }
-            }
-            .cardBackground(radius: 18)
-
-            if vm.isSessionComplete {
-                CompletedBadge()
-            } else {
-                PrimaryButton(title: "Complete session", action: vm.completeSession)
+        VStack(spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                ExerciseRow(item: item, isLast: index == items.count - 1)
             }
         }
+        .cardBackground(radius: 18)
     }
 }
 
 private struct ExerciseRow: View {
     var item: ExerciseEntry
-    var isDone: Bool
     var isLast: Bool
-    var toggle: () -> Void
 
     var body: some View {
         HStack(spacing: 13) {
-            Button(action: toggle) {
-                Circle()
-                    .strokeBorder(isDone ? Theme.good : Color.white.opacity(0.2), lineWidth: 2)
-                    .background(Circle().fill(isDone ? Theme.good.opacity(0.15) : Color.clear))
-                    .frame(width: 24, height: 24)
-                    .overlay {
-                        if isDone {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Theme.good)
-                        }
-                    }
-            }
-            .buttonStyle(.plain)
-
             VStack(alignment: .leading, spacing: 6) {
                 Text(item.name)
                     .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(isDone ? Theme.textTertiary : Theme.textPrimary)
-                    .strikethrough(isDone, color: Theme.textTertiary)
+                    .foregroundStyle(Theme.textPrimary)
                 if !item.setsReps.isEmpty {
                     Text(item.setsReps)
                         .font(.system(size: 13, weight: .semibold, design: .monospaced))
@@ -207,26 +116,9 @@ private struct ExerciseRow: View {
         .padding(.vertical, 14)
         .overlay(alignment: .bottom) {
             if !isLast {
-                Rectangle().fill(Theme.hairline).frame(height: 1).padding(.leading, 15 + 24 + 13)
+                Rectangle().fill(Theme.hairline).frame(height: 1).padding(.leading, 15)
             }
         }
-    }
-}
-
-private struct CompletedBadge: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "checkmark")
-                .font(.system(size: 14, weight: .bold))
-            Text("Session completed")
-                .font(.system(size: 15, weight: .heavy))
-        }
-        .foregroundStyle(Theme.good)
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(Theme.good.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Theme.good.opacity(0.3), lineWidth: 1))
     }
 }
 

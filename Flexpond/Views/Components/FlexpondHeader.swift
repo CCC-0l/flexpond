@@ -36,7 +36,7 @@ struct FlexpondHeader: View {
                 AvatarBadge()
             }
             Text(title)
-                .font(.system(size: 33, weight: .heavy))
+                .font(.system(size: title.count > 14 ? 24 : 33, weight: .heavy))
                 .foregroundStyle(Theme.textPrimary)
         }
         .padding(.horizontal, 20)

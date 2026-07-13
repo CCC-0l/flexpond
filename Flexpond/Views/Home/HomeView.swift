@@ -42,8 +42,8 @@ private struct ReadinessTeaserCard: View {
         Button { vm.selectTab(.readiness) } label: {
             HStack(spacing: 15) {
                 ZStack {
-                    CircularRing(progress: Double(vm.readiness?.score ?? 0) / 100, lineWidth: 6)
-                    Text("\(vm.readiness?.score ?? 0)")
+                    CircularRing(progress: Double(vm.homeReadinessScore) / 100, lineWidth: 6)
+                    Text("\(vm.homeReadinessScore)")
                         .font(.system(size: 19, weight: .heavy))
                         .foregroundStyle(Theme.textPrimary)
                 }
@@ -53,9 +53,18 @@ private struct ReadinessTeaserCard: View {
                     Text("READINESS")
                         .font(.label(10))
                         .foregroundStyle(Theme.textTertiary)
-                    Text(vm.readiness?.headline ?? "—")
+                    Text(vm.homeReadinessLabel)
                         .font(.system(size: 17, weight: .bold))
                         .foregroundStyle(Theme.textPrimary)
+                    if vm.ouraConnected {
+                        HStack(spacing: 5) {
+                            Circle().fill(Theme.good).frame(width: 5, height: 5)
+                            Text("LIVE · OURA")
+                                .font(.label(9.5))
+                                .foregroundStyle(Theme.good.opacity(0.85))
+                        }
+                        .padding(.top, 2)
+                    }
                 }
                 Spacer()
                 RowChevron()
@@ -100,7 +109,6 @@ private struct PlanSection: View {
                 PlanRowView(row: row, vm: vm)
             }
             DashedCTAButton(title: "Add workout", action: vm.goAddWorkout)
-            GhostTextButton(title: "Reset week", action: vm.resetWeek)
         }
     }
 }
@@ -122,38 +130,15 @@ private struct PlanRowView: View {
                             .font(.system(size: 12))
                             .foregroundStyle(Theme.textSecondary)
                             .lineLimit(1)
-                        if row.isLift {
-                            HStack(spacing: 8) {
-                                GeometryReader { geo in
-                                    Capsule()
-                                        .fill(Color.white.opacity(0.08))
-                                        .overlay(alignment: .leading) {
-                                            Capsule()
-                                                .fill(Theme.accent)
-                                                .frame(width: geo.size.width * row.progress)
-                                        }
-                                }
-                                .frame(height: 5)
-                                Text(row.weekLabel)
-                                    .font(.label(10.5))
-                                    .foregroundStyle(Theme.textSecondary)
-                                    .fixedSize()
-                            }
-                            .padding(.top, 6)
+                        if !row.todayLabel.isEmpty {
+                            Text(row.todayLabel)
+                                .font(.label(11.5))
+                                .foregroundStyle(Theme.accent)
+                                .padding(.top, 4)
                         }
                     }
                     Spacer(minLength: 8)
-                    if row.isDoneToday {
-                        HStack(spacing: 5) {
-                            Text("DONE")
-                                .font(.label(10))
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 11, weight: .bold))
-                        }
-                        .foregroundStyle(Theme.good)
-                    } else {
-                        RowChevron()
-                    }
+                    RowChevron()
                 }
                 .padding(13)
                 .cardBackground(radius: 16)

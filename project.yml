@@ -17,6 +17,8 @@ targets:
       - path: Flexpond/App
       - path: Flexpond/Theme
       - path: Flexpond/Views
+      - path: Flexpond/Resources/PhysiquePhotos
+        buildPhase: resources
     dependencies:
       - package: FlexpondCore
         product: FlexpondCore

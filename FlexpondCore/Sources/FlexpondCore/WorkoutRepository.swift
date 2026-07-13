@@ -2,35 +2,58 @@ import Foundation
 
 /// The seam between the app and a backend. Everything the UI needs is async
 /// so a real networked implementation (URLSession/whatever) can replace
-/// `MockWorkoutRepository` without touching any view or view model code.
+/// `LocalWorkoutRepository` without touching any view or view model code.
+/// Covers the app's full local persistence surface (workouts, diet, walk
+/// goal, the non-secret Oura snapshot) — the Oura PAT itself never passes
+/// through here, it stays in Keychain via `OuraService`.
 public protocol WorkoutRepository: Sendable {
     func fetchPlan() async throws -> [PlanItem]
     func savePlan(_ plan: [PlanItem]) async throws
     func fetchReadiness() async throws -> ReadinessData
     func fetchPhysiqueEntries() async throws -> [PhysiqueEntry]
-    func addPhysiqueEntry(_ entry: PhysiqueEntry) async throws
+    func savePhysiqueEntries(_ entries: [PhysiqueEntry]) async throws
+    func fetchDietProfile() async throws -> DietProfile?
+    func saveDietProfile(_ profile: DietProfile) async throws
+    func fetchMealLog() async throws -> [MealEntry]
+    func saveMealLog(_ log: [MealEntry]) async throws
+    func fetchWalkGoal() async throws -> Int?
+    func saveWalkGoal(_ goal: Int) async throws
+    func fetchOuraSnapshot() async throws -> OuraSnapshot?
+    func saveOuraSnapshot(_ snapshot: OuraSnapshot?) async throws
 }
 
-/// In-memory stand-in so the app is fully interactive before a real backend
-/// exists. Construct `AppViewModel(repository: MockWorkoutRepository())` today;
-/// swap in a real type later with no other code changes.
-public actor MockWorkoutRepository: WorkoutRepository {
-    private var plan: [PlanItem] = []
-    private var physiqueEntries: [PhysiqueEntry]
+/// UserDefaults + JSON-backed persistence, seeded with the design handoff's
+/// 6 sample physique entries (real bundled photos) on first launch. Simple
+/// on purpose — a single-user learning app doesn't need Core Data.
+public actor LocalWorkoutRepository: WorkoutRepository {
+    private let defaults: UserDefaults
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
 
-    public init() {
-        let calendar = Calendar.current
-        let now = Date()
-        physiqueEntries = [
-            PhysiqueEntry(id: "e1", label: "Starting point", date: calendar.date(byAdding: .day, value: -63, to: now) ?? now),
-            PhysiqueEntry(id: "e2", label: "6-week check", date: calendar.date(byAdding: .day, value: -21, to: now) ?? now),
-            PhysiqueEntry(id: "e3", label: "Latest", date: now),
-        ]
+    private enum Key {
+        static let plan = "flexpond.plan"
+        static let physiqueEntries = "flexpond.physiqueEntries"
+        static let dietProfile = "flexpond.dietProfile"
+        static let mealLog = "flexpond.mealLog"
+        static let walkGoal = "flexpond.walkGoal"
+        static let ouraSnapshot = "flexpond.ouraSnapshot"
     }
 
-    public func fetchPlan() async throws -> [PlanItem] { plan }
+    public init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
 
-    public func savePlan(_ plan: [PlanItem]) async throws { self.plan = plan }
+    // MARK: Plan
+
+    public func fetchPlan() async throws -> [PlanItem] {
+        load([PlanItem].self, forKey: Key.plan) ?? []
+    }
+
+    public func savePlan(_ plan: [PlanItem]) async throws {
+        save(plan, forKey: Key.plan)
+    }
+
+    // MARK: Readiness (static mock — used only pre-Oura-connect)
 
     public func fetchReadiness() async throws -> ReadinessData {
         ReadinessData(
@@ -63,9 +86,95 @@ public actor MockWorkoutRepository: WorkoutRepository {
         )
     }
 
-    public func fetchPhysiqueEntries() async throws -> [PhysiqueEntry] { physiqueEntries }
+    // MARK: Physique
 
-    public func addPhysiqueEntry(_ entry: PhysiqueEntry) async throws {
-        physiqueEntries.append(entry)
+    public func fetchPhysiqueEntries() async throws -> [PhysiqueEntry] {
+        load([PhysiqueEntry].self, forKey: Key.physiqueEntries) ?? Self.seededPhysiqueEntries
     }
+
+    public func savePhysiqueEntries(_ entries: [PhysiqueEntry]) async throws {
+        save(entries, forKey: Key.physiqueEntries)
+    }
+
+    // MARK: Diet
+
+    public func fetchDietProfile() async throws -> DietProfile? {
+        load(DietProfile.self, forKey: Key.dietProfile)
+    }
+
+    public func saveDietProfile(_ profile: DietProfile) async throws {
+        save(profile, forKey: Key.dietProfile)
+    }
+
+    public func fetchMealLog() async throws -> [MealEntry] {
+        load([MealEntry].self, forKey: Key.mealLog) ?? []
+    }
+
+    public func saveMealLog(_ log: [MealEntry]) async throws {
+        save(log, forKey: Key.mealLog)
+    }
+
+    // MARK: Walk goal
+
+    public func fetchWalkGoal() async throws -> Int? {
+        let value = defaults.integer(forKey: Key.walkGoal)
+        return value == 0 ? nil : value
+    }
+
+    public func saveWalkGoal(_ goal: Int) async throws {
+        defaults.set(goal, forKey: Key.walkGoal)
+    }
+
+    // MARK: Oura snapshot (non-secret only — PAT lives in Keychain via OuraService)
+
+    public func fetchOuraSnapshot() async throws -> OuraSnapshot? {
+        load(OuraSnapshot.self, forKey: Key.ouraSnapshot)
+    }
+
+    public func saveOuraSnapshot(_ snapshot: OuraSnapshot?) async throws {
+        guard let snapshot else {
+            defaults.removeObject(forKey: Key.ouraSnapshot)
+            return
+        }
+        save(snapshot, forKey: Key.ouraSnapshot)
+    }
+
+    // MARK: Helpers
+
+    private func save<T: Encodable>(_ value: T, forKey key: String) {
+        guard let data = try? encoder.encode(value) else { return }
+        defaults.set(data, forKey: key)
+    }
+
+    private func load<T: Decodable>(_ type: T.Type, forKey key: String) -> T? {
+        guard let data = defaults.data(forKey: key) else { return nil }
+        return try? decoder.decode(T.self, from: data)
+    }
+
+    /// The 6 sample entries from the design handoff (`dc.html`'s
+    /// `physEntries`/`PHYS_PHOTOS`), each with real bundled front/side/back
+    /// photos.
+    private static let seededPhysiqueEntries: [PhysiqueEntry] = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        func date(_ s: String) -> Date { formatter.date(from: s) ?? Date() }
+
+        func photos(_ assetPrefix: String) -> [String: String] {
+            [
+                PhysiquePose.front.rawValue: "phys-\(assetPrefix)-front",
+                PhysiquePose.side.rawValue: "phys-\(assetPrefix)-side",
+                PhysiquePose.back.rawValue: "phys-\(assetPrefix)-back",
+            ]
+        }
+
+        return [
+            PhysiqueEntry(id: "day1", label: "Day 1", date: date("Dec 10, 2025"), photoFileNames: photos("day1")),
+            PhysiqueEntry(id: "wk6", label: "Week 6", date: date("Jan 21, 2026"), photoFileNames: photos("6wk")),
+            PhysiqueEntry(id: "wk12", label: "Week 12", date: date("Mar 4, 2026"), photoFileNames: photos("12wk")),
+            PhysiqueEntry(id: "wk18", label: "Week 18", date: date("Apr 15, 2026"), photoFileNames: photos("18wk")),
+            PhysiqueEntry(id: "wk24", label: "Week 24", date: date("May 27, 2026"), photoFileNames: photos("24wk")),
+            PhysiqueEntry(id: "wk30", label: "Week 30", date: date("Jul 8, 2026"), photoFileNames: photos("30wk")),
+        ]
+    }()
 }

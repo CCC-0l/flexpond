@@ -63,7 +63,7 @@ struct RootView: View {
         switch vm.selectedTab {
         case .home: HomeView(vm: vm)
         case .workout: WorkoutContainerView(vm: vm)
-        case .diet: DietPlaceholderView()
+        case .diet: DietContainerView(vm: vm)
         case .readiness: ReadinessView(vm: vm)
         case .physique: PhysiqueView(vm: vm)
         }

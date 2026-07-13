@@ -77,7 +77,7 @@ private struct EntryPoseGrid: View {
             }
             HStack(spacing: 8) {
                 ForEach(PhysiquePose.allCases) { pose in
-                    PosePlaceholder(label: pose.label)
+                    PosePhoto(label: pose.label, fileName: entry.photoFileName(for: pose))
                 }
             }
         }
@@ -86,18 +86,28 @@ private struct EntryPoseGrid: View {
     }
 }
 
-private struct PosePlaceholder: View {
+/// Renders the bundled sample photo when available, otherwise the same
+/// placeholder tile used for user-added entries with no photo yet.
+private struct PosePhoto: View {
     var label: String
+    var fileName: String?
 
     var body: some View {
         VStack(spacing: 6) {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Theme.background)
-                .aspectRatio(3.0 / 4.0, contentMode: .fit)
-                .overlay(
-                    Image(systemName: "photo")
-                        .foregroundStyle(Theme.textFaint)
-                )
+            Group {
+                if let fileName, let uiImage = PhysiquePhotoCache.image(named: fileName) {
+                    Image(uiImage: uiImage)
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                } else {
+                    Rectangle()
+                        .fill(Theme.background)
+                        .overlay(Image(systemName: "photo").foregroundStyle(Theme.textFaint))
+                }
+            }
+            .aspectRatio(170.0 / 451.0, contentMode: .fit)
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
             Text(label.uppercased())
                 .font(.label(10))
                 .foregroundStyle(Theme.textTertiary)
@@ -109,31 +119,56 @@ private struct PosePlaceholder: View {
 private struct CompareSection: View {
     @ObservedObject var vm: AppViewModel
 
-    private var entries: [PhysiqueEntry] { vm.physiqueEntries }
-    private var indexA: Int { min(vm.compareIndexA, max(entries.count - 1, 0)) }
-    private var indexB: Int { min(vm.compareIndexB, max(entries.count - 1, 0)) }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("BEFORE")
-                .font(.label(11))
-                .foregroundStyle(Theme.textTertiary)
-            EntryPicker(entries: entries, selectedIndex: indexA) { vm.selectCompareA($0) }
+            Text("Tap any two entries to compare them side by side.")
+                .font(.system(size: 13))
+                .foregroundStyle(Theme.textSecondary)
+                .lineSpacing(3)
 
-            Text("AFTER")
-                .font(.label(11))
-                .foregroundStyle(Theme.textTertiary)
-            EntryPicker(entries: entries, selectedIndex: indexB) { vm.selectCompareB($0) }
+            ForEach(vm.compareOptions) { option in
+                Button { vm.toggleCompareEntry(option.id) } label: {
+                    HStack(spacing: 13) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(option.label)
+                                .font(.system(size: 14.5, weight: .bold))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text(option.date.formatted(date: .abbreviated, time: .omitted))
+                                .font(.label(11))
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        Spacer()
+                        if let number = option.badgeNumber {
+                            Circle()
+                                .fill(Theme.accent)
+                                .frame(width: 24, height: 24)
+                                .overlay(
+                                    Text("\(number)")
+                                        .font(.label(12))
+                                        .foregroundStyle(Theme.accentText)
+                                )
+                        } else {
+                            Circle()
+                                .stroke(Color.white.opacity(0.18), lineWidth: 1.5)
+                                .frame(width: 24, height: 24)
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(option.isSelected ? Theme.accent.opacity(0.08) : Theme.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(option.isSelected ? Theme.accent : Theme.hairline, lineWidth: option.isSelected ? 1.5 : 1))
+                }
+                .buttonStyle(.plain)
+            }
 
-            if entries.indices.contains(indexA), entries.indices.contains(indexB) {
-                let entryA = entries[indexA]
-                let entryB = entries[indexB]
-
+            if let entryA = vm.compareEntryA, let entryB = vm.compareEntryB {
                 HStack {
                     entryHeader(entryA)
                     Spacer()
                     entryHeader(entryB)
                 }
+                .padding(.top, 8)
 
                 ForEach(PhysiquePose.allCases) { pose in
                     VStack(alignment: .leading, spacing: 6) {
@@ -141,11 +176,19 @@ private struct CompareSection: View {
                             .font(.label(10))
                             .foregroundStyle(Theme.textTertiary)
                         HStack(spacing: 10) {
-                            PosePlaceholder(label: pose.label)
-                            PosePlaceholder(label: pose.label)
+                            PosePhoto(label: pose.label, fileName: entryA.photoFileName(for: pose))
+                            PosePhoto(label: pose.label, fileName: entryB.photoFileName(for: pose))
                         }
                     }
                 }
+            } else {
+                Text("Select two entries above to see them side by side.")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Theme.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
+                    .padding(24)
+                    .cardBackground(radius: 16)
             }
         }
     }
@@ -160,30 +203,5 @@ private struct CompareSection: View {
                 .foregroundStyle(Theme.accent)
         }
         .frame(maxWidth: .infinity)
-    }
-}
-
-private struct EntryPicker: View {
-    var entries: [PhysiqueEntry]
-    var selectedIndex: Int
-    var onSelect: (Int) -> Void
-
-    var body: some View {
-        FlowLayout(spacing: 7) {
-            ForEach(Array(entries.enumerated()), id: \.offset) { index, entry in
-                let isSelected = index == selectedIndex
-                Button { onSelect(index) } label: {
-                    Text(entry.label)
-                        .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(isSelected ? Color(hex: 0xEAF3FF) : Theme.textSecondary)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 9)
-                        .background(isSelected ? Theme.accent.opacity(0.16) : Color.white.opacity(0.05))
-                        .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(isSelected ? Theme.accent : Theme.hairline, lineWidth: 1))
-                        .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
-                }
-                .buttonStyle(.plain)
-            }
-        }
     }
 }
