@@ -1,0 +1,483 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		01C9D5CF6132A69A84DC7AFD /* CircularRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E73F2C64EAF6CD80A0DD24F /* CircularRing.swift */; };
+		0BC7084DDA13B4FA29FD27F5 /* IconBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D08FC36CD7305D3D4E36F6BC /* IconBadge.swift */; };
+		2C46AA478EF74E07BB765035 /* ReadinessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF2FDFB958FE6517D7990702 /* ReadinessView.swift */; };
+		3DE0BF1012B0C1117E559A2F /* TabIconShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A9D1A7821404BB924E18EC /* TabIconShape.swift */; };
+		418742F9BF29E539853ADBF9 /* WorkoutDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13564434A55DB609BEE125C0 /* WorkoutDetailView.swift */; };
+		4DAE7E532151D74FE9A0E608 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 014ADC1689495F25EF915F37 /* RootView.swift */; };
+		659D96D08E01500F958C4992 /* Sparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F604F4A6BE8CE3DA36206B /* Sparkline.swift */; };
+		69F92F1280A56B52A5F2EEA7 /* WorkoutTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261DF8EE94FA2EF953F34C92 /* WorkoutTodayView.swift */; };
+		6F247F446CF17C56C91F4DA4 /* FlexpondTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99D06925D29F5FC0EE1462B9 /* FlexpondTabBar.swift */; };
+		93689AA1E5F0F5E13AAB0151 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B24D0B644C7F98F5FAC2464 /* Theme.swift */; };
+		95EBBA956F68B5C590D36E81 /* WorkoutBrowseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C56B4D8D7D9E0D3256FBEE2 /* WorkoutBrowseView.swift */; };
+		9AC8664FEA43A2784827CA8F /* FlexpondHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148823DE771A3F2039B14CDB /* FlexpondHeader.swift */; };
+		9C99FFADA5FC4892798D6A4A /* SectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F65580D638DA1D96D6D7F8 /* SectionHeader.swift */; };
+		B1BD49F248665BDCED84AE1F /* Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = B167FF07650CC96C4A40690F /* Buttons.swift */; };
+		BACDEB11326AE447FF655530 /* DietPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C295E37C95E1C708F5DC7F2 /* DietPlaceholderView.swift */; };
+		CFECEF742338C2AA0B9884A3 /* PhysiqueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C901E2BB7986DA39504544 /* PhysiqueView.swift */; };
+		D3A7E4BAE38F5A108E529911 /* FlexpondApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A8DB4714945074414968A8 /* FlexpondApp.swift */; };
+		DDC676F0122037CFB97662C2 /* WorkoutContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EEBFF14EBEBC44F980E1148 /* WorkoutContainerView.swift */; };
+		E4E5A5E1BF9EEEB7DAEF0432 /* FlowLayout.swift in Sources */ = {isa = PBXBuildFile; fileRef = AFAA45CEDD2927390367C8A0 /* FlowLayout.swift */; };
+		FBCB64441D4A8EA540634A94 /* FlexpondCore in Frameworks */ = {isa = PBXBuildFile; productRef = DEB0797338DAD0D8B9FC3987 /* FlexpondCore */; };
+		FCA118925E136333AC1F1490 /* FlexpondCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C39AEF32EA918CB2079375DA /* FlexpondCard.swift */; };
+		FFEF66C86BF9780FC48165F5 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B846E6031A44D8D327BCC00 /* HomeView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		014ADC1689495F25EF915F37 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		04C901E2BB7986DA39504544 /* PhysiqueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiqueView.swift; sourceTree = "<group>"; };
+		0B24D0B644C7F98F5FAC2464 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
+		0C56B4D8D7D9E0D3256FBEE2 /* WorkoutBrowseView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutBrowseView.swift; sourceTree = "<group>"; };
+		13564434A55DB609BEE125C0 /* WorkoutDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutDetailView.swift; sourceTree = "<group>"; };
+		148823DE771A3F2039B14CDB /* FlexpondHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexpondHeader.swift; sourceTree = "<group>"; };
+		17F65580D638DA1D96D6D7F8 /* SectionHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionHeader.swift; sourceTree = "<group>"; };
+		18A9D1A7821404BB924E18EC /* TabIconShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabIconShape.swift; sourceTree = "<group>"; };
+		1EEBFF14EBEBC44F980E1148 /* WorkoutContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutContainerView.swift; sourceTree = "<group>"; };
+		261DF8EE94FA2EF953F34C92 /* WorkoutTodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTodayView.swift; sourceTree = "<group>"; };
+		2E73F2C64EAF6CD80A0DD24F /* CircularRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularRing.swift; sourceTree = "<group>"; };
+		31F604F4A6BE8CE3DA36206B /* Sparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sparkline.swift; sourceTree = "<group>"; };
+		3FED8D3BEBD73BF5A0721BF9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		5C295E37C95E1C708F5DC7F2 /* DietPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietPlaceholderView.swift; sourceTree = "<group>"; };
+		69C491101BD53D75555EF86C /* FlexpondCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FlexpondCore; path = FlexpondCore; sourceTree = SOURCE_ROOT; };
+		6CB2A0665F3C8C737ECAFE35 /* Flexpond.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Flexpond.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		8B846E6031A44D8D327BCC00 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		99D06925D29F5FC0EE1462B9 /* FlexpondTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexpondTabBar.swift; sourceTree = "<group>"; };
+		AFAA45CEDD2927390367C8A0 /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
+		B167FF07650CC96C4A40690F /* Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buttons.swift; sourceTree = "<group>"; };
+		B1A8DB4714945074414968A8 /* FlexpondApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexpondApp.swift; sourceTree = "<group>"; };
+		BF2FDFB958FE6517D7990702 /* ReadinessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessView.swift; sourceTree = "<group>"; };
+		C39AEF32EA918CB2079375DA /* FlexpondCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexpondCard.swift; sourceTree = "<group>"; };
+		D08FC36CD7305D3D4E36F6BC /* IconBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconBadge.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		AFF8A1C6E195F5FECD3D2DD9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FBCB64441D4A8EA540634A94 /* FlexpondCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		039BC549638C89FA18E81DF1 /* Diet */ = {
+			isa = PBXGroup;
+			children = (
+				5C295E37C95E1C708F5DC7F2 /* DietPlaceholderView.swift */,
+			);
+			path = Diet;
+			sourceTree = "<group>";
+		};
+		1436E3B5C2C2C08FA91CCBB7 /* Home */ = {
+			isa = PBXGroup;
+			children = (
+				8B846E6031A44D8D327BCC00 /* HomeView.swift */,
+			);
+			path = Home;
+			sourceTree = "<group>";
+		};
+		15D16781612553E7AFAE2C50 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B1CFA20D51FF360356B78C91 /* Components */,
+				039BC549638C89FA18E81DF1 /* Diet */,
+				1436E3B5C2C2C08FA91CCBB7 /* Home */,
+				9882A79A241E2EB88AB04BAC /* Physique */,
+				22BFB412CC16C50F5B4EF10F /* Readiness */,
+				48FBE7301391D797C3BB8119 /* Workout */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		1F7AD5F413F51F4C21D60A8F /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				6CB2A0665F3C8C737ECAFE35 /* Flexpond.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		22BFB412CC16C50F5B4EF10F /* Readiness */ = {
+			isa = PBXGroup;
+			children = (
+				BF2FDFB958FE6517D7990702 /* ReadinessView.swift */,
+			);
+			path = Readiness;
+			sourceTree = "<group>";
+		};
+		37A00EE599853FDD08C18AAA /* App */ = {
+			isa = PBXGroup;
+			children = (
+				B1A8DB4714945074414968A8 /* FlexpondApp.swift */,
+				3FED8D3BEBD73BF5A0721BF9 /* Info.plist */,
+				014ADC1689495F25EF915F37 /* RootView.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		3DDA230ECF9C3517D13E9AED /* Theme */ = {
+			isa = PBXGroup;
+			children = (
+				0B24D0B644C7F98F5FAC2464 /* Theme.swift */,
+			);
+			path = Theme;
+			sourceTree = "<group>";
+		};
+		48FBE7301391D797C3BB8119 /* Workout */ = {
+			isa = PBXGroup;
+			children = (
+				0C56B4D8D7D9E0D3256FBEE2 /* WorkoutBrowseView.swift */,
+				1EEBFF14EBEBC44F980E1148 /* WorkoutContainerView.swift */,
+				13564434A55DB609BEE125C0 /* WorkoutDetailView.swift */,
+				261DF8EE94FA2EF953F34C92 /* WorkoutTodayView.swift */,
+			);
+			path = Workout;
+			sourceTree = "<group>";
+		};
+		4C68B24A551159EADF874DFC /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				69C491101BD53D75555EF86C /* FlexpondCore */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		6956A63C3CDBE63A7344D596 /* Flexpond */ = {
+			isa = PBXGroup;
+			children = (
+				37A00EE599853FDD08C18AAA /* App */,
+				3DDA230ECF9C3517D13E9AED /* Theme */,
+				15D16781612553E7AFAE2C50 /* Views */,
+			);
+			path = Flexpond;
+			sourceTree = "<group>";
+		};
+		9882A79A241E2EB88AB04BAC /* Physique */ = {
+			isa = PBXGroup;
+			children = (
+				04C901E2BB7986DA39504544 /* PhysiqueView.swift */,
+			);
+			path = Physique;
+			sourceTree = "<group>";
+		};
+		9E7ECC2714C61100FA39B689 = {
+			isa = PBXGroup;
+			children = (
+				6956A63C3CDBE63A7344D596 /* Flexpond */,
+				4C68B24A551159EADF874DFC /* Packages */,
+				1F7AD5F413F51F4C21D60A8F /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B1CFA20D51FF360356B78C91 /* Components */ = {
+			isa = PBXGroup;
+			children = (
+				B167FF07650CC96C4A40690F /* Buttons.swift */,
+				2E73F2C64EAF6CD80A0DD24F /* CircularRing.swift */,
+				C39AEF32EA918CB2079375DA /* FlexpondCard.swift */,
+				148823DE771A3F2039B14CDB /* FlexpondHeader.swift */,
+				99D06925D29F5FC0EE1462B9 /* FlexpondTabBar.swift */,
+				AFAA45CEDD2927390367C8A0 /* FlowLayout.swift */,
+				D08FC36CD7305D3D4E36F6BC /* IconBadge.swift */,
+				17F65580D638DA1D96D6D7F8 /* SectionHeader.swift */,
+				31F604F4A6BE8CE3DA36206B /* Sparkline.swift */,
+				18A9D1A7821404BB924E18EC /* TabIconShape.swift */,
+			);
+			path = Components;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		8BED95EE3EA3EE757A20613C /* Flexpond */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D6871E94922565F150C47396 /* Build configuration list for PBXNativeTarget "Flexpond" */;
+			buildPhases = (
+				9FE7BA0B329AC73DD20229C1 /* Sources */,
+				AFF8A1C6E195F5FECD3D2DD9 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = Flexpond;
+			packageProductDependencies = (
+				DEB0797338DAD0D8B9FC3987 /* FlexpondCore */,
+			);
+			productName = Flexpond;
+			productReference = 6CB2A0665F3C8C737ECAFE35 /* Flexpond.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0FDB763CA9BBF8D9D0A2EA05 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+				};
+			};
+			buildConfigurationList = 7941C5697EA0E3B5C65A0B77 /* Build configuration list for PBXProject "Flexpond" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 9E7ECC2714C61100FA39B689;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				8DFCFD388FC63755D924645E /* XCLocalSwiftPackageReference "FlexpondCore" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 1F7AD5F413F51F4C21D60A8F /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				8BED95EE3EA3EE757A20613C /* Flexpond */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9FE7BA0B329AC73DD20229C1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B1BD49F248665BDCED84AE1F /* Buttons.swift in Sources */,
+				01C9D5CF6132A69A84DC7AFD /* CircularRing.swift in Sources */,
+				BACDEB11326AE447FF655530 /* DietPlaceholderView.swift in Sources */,
+				D3A7E4BAE38F5A108E529911 /* FlexpondApp.swift in Sources */,
+				FCA118925E136333AC1F1490 /* FlexpondCard.swift in Sources */,
+				9AC8664FEA43A2784827CA8F /* FlexpondHeader.swift in Sources */,
+				6F247F446CF17C56C91F4DA4 /* FlexpondTabBar.swift in Sources */,
+				E4E5A5E1BF9EEEB7DAEF0432 /* FlowLayout.swift in Sources */,
+				FFEF66C86BF9780FC48165F5 /* HomeView.swift in Sources */,
+				0BC7084DDA13B4FA29FD27F5 /* IconBadge.swift in Sources */,
+				CFECEF742338C2AA0B9884A3 /* PhysiqueView.swift in Sources */,
+				2C46AA478EF74E07BB765035 /* ReadinessView.swift in Sources */,
+				4DAE7E532151D74FE9A0E608 /* RootView.swift in Sources */,
+				9C99FFADA5FC4892798D6A4A /* SectionHeader.swift in Sources */,
+				659D96D08E01500F958C4992 /* Sparkline.swift in Sources */,
+				3DE0BF1012B0C1117E559A2F /* TabIconShape.swift in Sources */,
+				93689AA1E5F0F5E13AAB0151 /* Theme.swift in Sources */,
+				95EBBA956F68B5C590D36E81 /* WorkoutBrowseView.swift in Sources */,
+				DDC676F0122037CFB97662C2 /* WorkoutContainerView.swift in Sources */,
+				418742F9BF29E539853ADBF9 /* WorkoutDetailView.swift in Sources */,
+				69F92F1280A56B52A5F2EEA7 /* WorkoutTodayView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		36740BED1C469A7A7CC8EF06 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		4A9CDF480CE29F6A4168E670 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		704A697D2FE6C67A101B09A0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Flexpond/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flexpond.app;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Debug;
+		};
+		DB02F21FC605526E9B325213 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				INFOPLIST_FILE = Flexpond/App/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.flexpond.app;
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 1;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		7941C5697EA0E3B5C65A0B77 /* Build configuration list for PBXProject "Flexpond" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				36740BED1C469A7A7CC8EF06 /* Debug */,
+				4A9CDF480CE29F6A4168E670 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D6871E94922565F150C47396 /* Build configuration list for PBXNativeTarget "Flexpond" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				704A697D2FE6C67A101B09A0 /* Debug */,
+				DB02F21FC605526E9B325213 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		8DFCFD388FC63755D924645E /* XCLocalSwiftPackageReference "FlexpondCore" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = FlexpondCore;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		DEB0797338DAD0D8B9FC3987 /* FlexpondCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FlexpondCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 0FDB763CA9BBF8D9D0A2EA05 /* Project object */;
+}
