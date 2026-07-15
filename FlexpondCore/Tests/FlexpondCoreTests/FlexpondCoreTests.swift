@@ -158,6 +158,65 @@ struct FlexpondCoreTests {
         #expect(vm.selectedEntryIDs == [ids[1]])
     }
 
+    // MARK: - Physique stats
+
+    @Test func physiqueStatsBMIKnownValue() {
+        let bmi = PhysiqueStats.bmi(weightPounds: 180, heightFeet: 5, heightInches: 10)
+        #expect(bmi != nil)
+        #expect(abs(bmi! - 25.83) < 0.01)
+    }
+
+    @Test func physiqueStatsBMINilWithoutHeight() {
+        #expect(PhysiqueStats.bmi(weightPounds: 180, heightFeet: 0, heightInches: 0) == nil)
+    }
+
+    @Test @MainActor func physiqueBMIUsesDietProfileHeight() async throws {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        let day1 = try #require(vm.physiqueEntries.first { $0.id == "day1" })
+        let bmi = try #require(vm.bmi(for: day1))
+        #expect(abs(bmi - 25.54) < 0.05)
+    }
+
+    @Test @MainActor func physiqueDeltasComputeVsChronologicallyPreviousEntry() async throws {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        let day1 = try #require(vm.physiqueEntries.first { $0.id == "day1" })
+        let wk6 = try #require(vm.physiqueEntries.first { $0.id == "wk6" })
+
+        #expect(vm.weightDelta(for: day1) == nil) // first entry, nothing to compare against
+        #expect(vm.weightDelta(for: wk6) == 2)     // 180 - 178
+        #expect((vm.bmiDelta(for: wk6) ?? 0) > 0)   // gained weight -> BMI went up
+    }
+
+    @Test @MainActor func updateEntryWeightEditsInPlace() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        vm.updateEntryWeight("day1", weightPounds: 175)
+        #expect(vm.physiqueEntries.first { $0.id == "day1" }?.weightPounds == 175)
+    }
+
+    @Test @MainActor func deletePhysiqueEntryRemovesItAndClearsCompareSelection() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        vm.toggleCompareEntry("day1")
+        #expect(vm.selectedEntryIDs == ["day1"])
+        vm.deletePhysiqueEntry("day1")
+        #expect(vm.physiqueEntries.contains { $0.id == "day1" } == false)
+        #expect(vm.selectedEntryIDs.isEmpty)
+    }
+
+    @Test @MainActor func addPhysiqueEntryUsesDraftWeightThenClearsIt() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        let countBefore = vm.physiqueEntries.count
+        vm.newEntryWeight = "195"
+        vm.addPhysiqueEntry()
+        #expect(vm.physiqueEntries.count == countBefore + 1)
+        #expect(vm.physiqueEntries.last?.weightPounds == 195)
+        #expect(vm.newEntryWeight == "")
+    }
+
     // MARK: - MacroCalculator
 
     @Test func macroCalculatorMifflinMaleMaintain() {

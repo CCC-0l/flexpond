@@ -168,13 +168,15 @@ public actor LocalWorkoutRepository: WorkoutRepository {
             ]
         }
 
+        // A plausible steady lean-bulk progression so Timeline/Compare
+        // deltas have real numbers to show before the user logs their own.
         return [
-            PhysiqueEntry(id: "day1", label: "Day 1", date: date("Dec 10, 2025"), photoFileNames: photos("day1")),
-            PhysiqueEntry(id: "wk6", label: "Week 6", date: date("Jan 21, 2026"), photoFileNames: photos("6wk")),
-            PhysiqueEntry(id: "wk12", label: "Week 12", date: date("Mar 4, 2026"), photoFileNames: photos("12wk")),
-            PhysiqueEntry(id: "wk18", label: "Week 18", date: date("Apr 15, 2026"), photoFileNames: photos("18wk")),
-            PhysiqueEntry(id: "wk24", label: "Week 24", date: date("May 27, 2026"), photoFileNames: photos("24wk")),
-            PhysiqueEntry(id: "wk30", label: "Week 30", date: date("Jul 8, 2026"), photoFileNames: photos("30wk")),
+            PhysiqueEntry(id: "day1", label: "Day 1", date: date("Dec 10, 2025"), photoFileNames: photos("day1"), weightPounds: 178),
+            PhysiqueEntry(id: "wk6", label: "Week 6", date: date("Jan 21, 2026"), photoFileNames: photos("6wk"), weightPounds: 180),
+            PhysiqueEntry(id: "wk12", label: "Week 12", date: date("Mar 4, 2026"), photoFileNames: photos("12wk"), weightPounds: 183),
+            PhysiqueEntry(id: "wk18", label: "Week 18", date: date("Apr 15, 2026"), photoFileNames: photos("18wk"), weightPounds: 186),
+            PhysiqueEntry(id: "wk24", label: "Week 24", date: date("May 27, 2026"), photoFileNames: photos("24wk"), weightPounds: 189),
+            PhysiqueEntry(id: "wk30", label: "Week 30", date: date("Jul 8, 2026"), photoFileNames: photos("30wk"), weightPounds: 192),
         ]
     }()
 }

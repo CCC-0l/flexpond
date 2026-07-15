@@ -49,15 +49,16 @@ private struct TimelineSection: View {
     var body: some View {
         VStack(spacing: 14) {
             ForEach(vm.physiqueEntries) { entry in
-                EntryPoseGrid(entry: entry)
+                EntryPoseGrid(entry: entry, vm: vm)
             }
-            DashedCTAButton(title: "Add today's photos", action: vm.addPhysiqueEntry)
+            LogEntryForm(vm: vm)
         }
     }
 }
 
 private struct EntryPoseGrid: View {
     var entry: PhysiqueEntry
+    @ObservedObject var vm: AppViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
@@ -71,10 +72,16 @@ private struct EntryPoseGrid: View {
                         .foregroundStyle(Theme.accent)
                 }
                 Spacer()
-                Text("UP TO 3 PHOTOS")
-                    .font(.label(10))
-                    .foregroundStyle(Theme.textTertiary)
+                Button { vm.deletePhysiqueEntry(entry.id) } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+                .buttonStyle(.plain)
             }
+
+            EntryStatsRow(entry: entry, vm: vm)
+
             HStack(spacing: 8) {
                 ForEach(PhysiquePose.allCases) { pose in
                     PosePhoto(label: pose.label, fileName: entry.photoFileName(for: pose))
@@ -83,6 +90,99 @@ private struct EntryPoseGrid: View {
         }
         .padding(15)
         .cardBackground(radius: 18)
+    }
+}
+
+/// Weight + BMI for one entry, with deltas vs. the chronologically
+/// previous entry. Tapping the weight opens an inline editor — self
+/// -reported stats mean typos/forgotten entries are the common case.
+private struct EntryStatsRow: View {
+    var entry: PhysiqueEntry
+    @ObservedObject var vm: AppViewModel
+    @State private var isEditingWeight = false
+    @State private var weightDraft = ""
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Button {
+                weightDraft = entry.weightPounds.map(String.init) ?? ""
+                isEditingWeight = true
+            } label: {
+                HStack(spacing: 6) {
+                    if let weight = entry.weightPounds {
+                        Text("\(weight) lb")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Theme.textPrimary)
+                    } else {
+                        Text("Log weight")
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(Theme.accent)
+                    }
+                    if let delta = vm.weightDelta(for: entry) {
+                        StatDeltaBadge(value: Double(delta), suffix: "lb")
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+
+            if let bmi = vm.bmi(for: entry) {
+                Divider().frame(height: 14)
+                HStack(spacing: 6) {
+                    Text("BMI \(bmi, specifier: "%.1f")")
+                        .font(.system(size: 13))
+                        .foregroundStyle(Theme.textSecondary)
+                    if let bmiDelta = vm.bmiDelta(for: entry) {
+                        StatDeltaBadge(value: bmiDelta, suffix: "", decimals: 1)
+                    }
+                }
+            }
+            Spacer()
+        }
+        .alert("Edit weight", isPresented: $isEditingWeight) {
+            TextField("Weight (lb)", text: $weightDraft)
+                .keyboardType(.numberPad)
+            Button("Save") { vm.updateEntryWeight(entry.id, weightPounds: Int(weightDraft)) }
+            Button("Cancel", role: .cancel) {}
+        }
+    }
+}
+
+private struct LogEntryForm: View {
+    @ObservedObject var vm: AppViewModel
+
+    var body: some View {
+        HStack(spacing: 10) {
+            TextField("Weight (lb)", text: $vm.newEntryWeight)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .font(.system(size: 14))
+                .foregroundStyle(Theme.textPrimary)
+                .padding(.vertical, 13)
+                .background(Theme.card)
+                .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(Theme.hairline, lineWidth: 1))
+
+            Button {
+                vm.addPhysiqueEntry()
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .bold))
+                    Text("Log entry")
+                        .font(.system(size: 14, weight: .bold))
+                }
+                .foregroundStyle(Theme.accent)
+                .padding(.horizontal, 16)
+                .frame(height: 48)
+                .background(Theme.accent.opacity(0.06))
+                .clipShape(RoundedRectangle(cornerRadius: 13, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 13, style: .continuous)
+                        .strokeBorder(Theme.accent.opacity(0.4), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                )
+            }
+            .buttonStyle(.plain)
+        }
     }
 }
 
@@ -170,6 +270,8 @@ private struct CompareSection: View {
                 }
                 .padding(.top, 8)
 
+                CompareStatsRow(entryA: entryA, entryB: entryB, vm: vm)
+
                 ForEach(PhysiquePose.allCases) { pose in
                     VStack(alignment: .leading, spacing: 6) {
                         Text(pose.label.uppercased())
@@ -201,6 +303,50 @@ private struct CompareSection: View {
             Text(entry.date.formatted(date: .abbreviated, time: .omitted))
                 .font(.label(10.5))
                 .foregroundStyle(Theme.accent)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+/// Weight/BMI for the two entries selected in Compare, with the delta
+/// between them (A → B), distinct from Timeline's "vs. previous entry"
+/// delta.
+private struct CompareStatsRow: View {
+    var entryA: PhysiqueEntry
+    var entryB: PhysiqueEntry
+    @ObservedObject var vm: AppViewModel
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack {
+                statColumn(weight: entryA.weightPounds, bmi: vm.bmi(for: entryA))
+                Spacer()
+                statColumn(weight: entryB.weightPounds, bmi: vm.bmi(for: entryB))
+            }
+            if let weightA = entryA.weightPounds, let weightB = entryB.weightPounds {
+                HStack(spacing: 10) {
+                    StatDeltaBadge(value: Double(weightB - weightA), suffix: "lb")
+                    if let bmiA = vm.bmi(for: entryA), let bmiB = vm.bmi(for: entryB) {
+                        StatDeltaBadge(value: bmiB - bmiA, suffix: "BMI", decimals: 1)
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(13)
+        .cardBackground(radius: 14)
+    }
+
+    private func statColumn(weight: Int?, bmi: Double?) -> some View {
+        VStack(spacing: 2) {
+            Text(weight.map { "\($0) lb" } ?? "—")
+                .font(.system(size: 15, weight: .bold))
+                .foregroundStyle(Theme.textPrimary)
+            if let bmi {
+                Text("BMI \(bmi, specifier: "%.1f")")
+                    .font(.label(10.5))
+                    .foregroundStyle(Theme.textSecondary)
+            }
         }
         .frame(maxWidth: .infinity)
     }

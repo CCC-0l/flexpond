@@ -21,6 +21,7 @@
 		3DE0BF1012B0C1117E559A2F /* TabIconShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A9D1A7821404BB924E18EC /* TabIconShape.swift */; };
 		418742F9BF29E539853ADBF9 /* WorkoutDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13564434A55DB609BEE125C0 /* WorkoutDetailView.swift */; };
 		4DAE7E532151D74FE9A0E608 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 014ADC1689495F25EF915F37 /* RootView.swift */; };
+		5CB11C94DACE8E33ABF99ED9 /* StatDeltaBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E761058616FBF953AFD8A4DA /* StatDeltaBadge.swift */; };
 		659D96D08E01500F958C4992 /* Sparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F604F4A6BE8CE3DA36206B /* Sparkline.swift */; };
 		69F92F1280A56B52A5F2EEA7 /* WorkoutTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261DF8EE94FA2EF953F34C92 /* WorkoutTodayView.swift */; };
 		6CBFD1F2BC03BEB601B30211 /* phys-18wk-side.png in Resources */ = {isa = PBXBuildFile; fileRef = 9FD76114028BEBB2AF2CDA55 /* phys-18wk-side.png */; };
@@ -98,6 +99,7 @@
 		DC6FF17A937721D822BDE91C /* phys-day1-front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-day1-front.png"; sourceTree = "<group>"; };
 		DEDE4E05D09D1B61A874E96D /* phys-12wk-side.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-12wk-side.png"; sourceTree = "<group>"; };
 		E0DCF42871B2157B2289E38B /* DietSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietSetupView.swift; sourceTree = "<group>"; };
+		E761058616FBF953AFD8A4DA /* StatDeltaBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatDeltaBadge.swift; sourceTree = "<group>"; };
 		F000D4F55968F152BC217EBE /* phys-day1-back.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-day1-back.png"; sourceTree = "<group>"; };
 		F0AC77CAC12FDF0AD78FBDF9 /* phys-24wk-front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-24wk-front.png"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -240,6 +242,7 @@
 				89CD8C0F925B0081F1C5B94D /* PhysiquePhotoCache.swift */,
 				17F65580D638DA1D96D6D7F8 /* SectionHeader.swift */,
 				31F604F4A6BE8CE3DA36206B /* Sparkline.swift */,
+				E761058616FBF953AFD8A4DA /* StatDeltaBadge.swift */,
 				18A9D1A7821404BB924E18EC /* TabIconShape.swift */,
 			);
 			path = Components;
@@ -386,6 +389,7 @@
 				4DAE7E532151D74FE9A0E608 /* RootView.swift in Sources */,
 				9C99FFADA5FC4892798D6A4A /* SectionHeader.swift in Sources */,
 				659D96D08E01500F958C4992 /* Sparkline.swift in Sources */,
+				5CB11C94DACE8E33ABF99ED9 /* StatDeltaBadge.swift in Sources */,
 				3DE0BF1012B0C1117E559A2F /* TabIconShape.swift in Sources */,
 				93689AA1E5F0F5E13AAB0151 /* Theme.swift in Sources */,
 				95EBBA956F68B5C590D36E81 /* WorkoutBrowseView.swift in Sources */,

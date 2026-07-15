@@ -26,7 +26,7 @@ struct PrimaryButton: View {
     }
 }
 
-/// Dashed blue ghost button — "Add workout", "Add today's photos".
+/// Dashed blue ghost button — e.g. "Add workout" on Home.
 struct DashedCTAButton: View {
     var title: String
     var action: () -> Void

@@ -111,6 +111,7 @@ public final class AppViewModel: ObservableObject {
     @Published public private(set) var physiqueEntries: [PhysiqueEntry] = []
     @Published public var physiqueViewMode: PhysiqueViewMode = .timeline
     @Published public private(set) var selectedEntryIDs: [String] = []
+    @Published public var newEntryWeight: String = ""
 
     // Diet
     @Published public var dietProfile: DietProfile = DietProfile()
@@ -525,11 +526,62 @@ public final class AppViewModel: ObservableObject {
     }
 
     public func addPhysiqueEntry() {
-        let entry = PhysiqueEntry(id: "e\(Int(now().timeIntervalSince1970))", label: "Set \(physiqueEntries.count + 1)", date: now())
+        let entry = PhysiqueEntry(
+            id: "e\(Int(now().timeIntervalSince1970))",
+            label: "Set \(physiqueEntries.count + 1)",
+            date: now(),
+            weightPounds: Int(newEntryWeight)
+        )
         physiqueEntries.append(entry)
         physiqueViewMode = .timeline
+        newEntryWeight = ""
+        persistPhysiqueEntries()
+    }
+
+    public func updateEntryWeight(_ id: String, weightPounds: Int?) {
+        guard let index = physiqueEntries.firstIndex(where: { $0.id == id }) else { return }
+        physiqueEntries[index] = physiqueEntries[index].withWeightPounds(weightPounds)
+        persistPhysiqueEntries()
+    }
+
+    public func deletePhysiqueEntry(_ id: String) {
+        physiqueEntries.removeAll { $0.id == id }
+        selectedEntryIDs.removeAll { $0 == id }
+        persistPhysiqueEntries()
+    }
+
+    private func persistPhysiqueEntries() {
         let snapshot = physiqueEntries
         Task { try? await repository.savePhysiqueEntries(snapshot) }
+    }
+
+    /// BMI for a given entry, using the height already captured in
+    /// `dietProfile` — nil if the entry has no logged weight or no height
+    /// has been set up yet (Diet profile untouched).
+    public func bmi(for entry: PhysiqueEntry) -> Double? {
+        guard let weight = entry.weightPounds else { return nil }
+        return PhysiqueStats.bmi(weightPounds: weight, heightFeet: dietProfile.heightFeet, heightInches: dietProfile.heightInches)
+    }
+
+    /// Weight change vs. the chronologically previous entry (by `date`,
+    /// not array order) — nil for the first entry, or if either entry is
+    /// missing a logged weight.
+    public func weightDelta(for entry: PhysiqueEntry) -> Int? {
+        let sorted = physiqueEntries.sorted { $0.date < $1.date }
+        guard let index = sorted.firstIndex(where: { $0.id == entry.id }), index > 0,
+              let currentWeight = entry.weightPounds,
+              let previousWeight = sorted[index - 1].weightPounds else { return nil }
+        return currentWeight - previousWeight
+    }
+
+    /// BMI change vs. the chronologically previous entry — nil under the
+    /// same conditions as `weightDelta(for:)`.
+    public func bmiDelta(for entry: PhysiqueEntry) -> Double? {
+        let sorted = physiqueEntries.sorted { $0.date < $1.date }
+        guard let index = sorted.firstIndex(where: { $0.id == entry.id }), index > 0,
+              let currentBMI = bmi(for: entry),
+              let previousBMI = bmi(for: sorted[index - 1]) else { return nil }
+        return currentBMI - previousBMI
     }
 
     // MARK: - Derived state & actions: Diet

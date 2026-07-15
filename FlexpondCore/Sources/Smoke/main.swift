@@ -196,13 +196,38 @@ await MainActor.run {
     check(vm.homeReadinessScore == 82, "home readiness falls back to static 82 pre-Oura-connect")
     check(vm.homeReadinessLabel == "Primed to train", "home readiness label falls back pre-connect")
 
+    // Physique stats
+    let day1 = vm.physiqueEntries.first { $0.id == "day1" }!
+    let wk6 = vm.physiqueEntries.first { $0.id == "wk6" }!
+    check(abs((vm.bmi(for: day1) ?? 0) - 25.54) < 0.05, "bmi(for:) uses DietProfile height (default 5'10\")")
+    check(vm.weightDelta(for: day1) == nil, "first chronological entry has no delta to compare against")
+    check(vm.weightDelta(for: wk6) == 2, "weightDelta vs chronologically previous entry (180 - 178)")
+    check((vm.bmiDelta(for: wk6) ?? 0) > 0, "gained weight -> bmiDelta positive")
+
+    vm.updateEntryWeight("day1", weightPounds: 175)
+    check(vm.physiqueEntries.first { $0.id == "day1" }?.weightPounds == 175, "updateEntryWeight edits in place")
+
+    let countBeforeAdd = vm.physiqueEntries.count
+    vm.newEntryWeight = "195"
+    vm.addPhysiqueEntry()
+    check(vm.physiqueEntries.count == countBeforeAdd + 1, "addPhysiqueEntry appends one entry")
+    check(vm.physiqueEntries.last?.weightPounds == 195, "addPhysiqueEntry uses the draft weight")
+    check(vm.newEntryWeight == "", "addPhysiqueEntry clears the draft after use")
+
     let ids = vm.physiqueEntries.map { $0.id }
     vm.toggleCompareEntry(ids[0])
     vm.toggleCompareEntry(ids[1])
     check(vm.selectedEntryIDs == [ids[0], ids[1]], "compare selects first two toggled entries")
     vm.toggleCompareEntry(ids[2])
     check(vm.selectedEntryIDs == [ids[1], ids[2]], "compare evicts oldest selection FIFO once 2 are picked")
+
+    vm.deletePhysiqueEntry(ids[1])
+    check(vm.physiqueEntries.contains { $0.id == ids[1] } == false, "deletePhysiqueEntry removes the entry")
+    check(vm.selectedEntryIDs.contains(ids[1]) == false, "deleting a compare-selected entry clears its selection")
 }
+
+check(PhysiqueStats.bmi(weightPounds: 180, heightFeet: 5, heightInches: 10) != nil, "PhysiqueStats.bmi computes with valid height")
+check(PhysiqueStats.bmi(weightPounds: 180, heightFeet: 0, heightInches: 0) == nil, "PhysiqueStats.bmi is nil without a height")
 
 do {
     var comps = DateComponents()
