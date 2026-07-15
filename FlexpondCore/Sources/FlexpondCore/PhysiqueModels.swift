@@ -10,12 +10,14 @@ public struct PhysiqueEntry: Codable, Sendable, Identifiable, Equatable {
     public let id: String
     public let label: String
     public let date: Date
-    /// Bundled resource filename (without extension), keyed by
-    /// `PhysiquePose.rawValue`, for the sample entries seeded from the
-    /// design handoff's `assets/`. Empty for user-added entries until real
-    /// photo capture is wired up. (Keyed by raw string rather than
-    /// `PhysiquePose` directly so `Codable` always encodes it as a plain
-    /// JSON object.)
+    /// Photo identifier keyed by `PhysiquePose.rawValue` — either a bundled
+    /// resource name (the 6 sample entries seeded from the design handoff's
+    /// `assets/`) or a user-captured photo's filename in the app's
+    /// Documents directory (see `PhysiquePhotoCache` in the app target,
+    /// which resolves either kind transparently). Missing a key means no
+    /// photo has been captured yet for that pose. (Keyed by raw string
+    /// rather than `PhysiquePose` directly so `Codable` always encodes it
+    /// as a plain JSON object.)
     public let photoFileNames: [String: String]
     /// Self-reported at logging time. Optional — an entry can exist with
     /// photos but no weight logged, or vice versa.
@@ -35,6 +37,12 @@ public struct PhysiqueEntry: Codable, Sendable, Identifiable, Equatable {
 
     public func withWeightPounds(_ weightPounds: Int?) -> PhysiqueEntry {
         PhysiqueEntry(id: id, label: label, date: date, photoFileNames: photoFileNames, weightPounds: weightPounds)
+    }
+
+    public func withPhotoIdentifier(_ identifier: String, for pose: PhysiquePose) -> PhysiqueEntry {
+        var names = photoFileNames
+        names[pose.rawValue] = identifier
+        return PhysiqueEntry(id: id, label: label, date: date, photoFileNames: names, weightPounds: weightPounds)
     }
 }
 

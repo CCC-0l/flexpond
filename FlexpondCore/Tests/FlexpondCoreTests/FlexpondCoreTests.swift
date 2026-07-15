@@ -189,6 +189,15 @@ struct FlexpondCoreTests {
         #expect((vm.bmiDelta(for: wk6) ?? 0) > 0)   // gained weight -> BMI went up
     }
 
+    @Test @MainActor func setPhotoIdentifierUpdatesOnlyTheGivenPose() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        vm.setPhotoIdentifier("day1-front", for: .front, entryID: "day1")
+        let day1 = vm.physiqueEntries.first { $0.id == "day1" }
+        #expect(day1?.photoFileName(for: .front) == "day1-front")
+        #expect(day1?.photoFileName(for: .side) == "phys-day1-side") // untouched
+    }
+
     @Test @MainActor func updateEntryWeightEditsInPlace() async {
         let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
         await vm.load()
@@ -215,6 +224,23 @@ struct FlexpondCoreTests {
         #expect(vm.physiqueEntries.count == countBefore + 1)
         #expect(vm.physiqueEntries.last?.weightPounds == 195)
         #expect(vm.newEntryWeight == "")
+    }
+
+    @Test @MainActor func todaysMealLogFiltersOutOlderDaysButKeepsFullHistory() async {
+        var currentDate = Date()
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), now: { currentDate })
+        await vm.load()
+
+        currentDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        vm.addQuickMeal(QuickMeal.presets[0])
+
+        currentDate = Date()
+        vm.addQuickMeal(QuickMeal.presets[1])
+
+        #expect(vm.mealLog.count == 2)
+        #expect(vm.todaysMealLog.count == 1)
+        #expect(vm.todaysMealLog.first?.name == QuickMeal.presets[1].name)
+        #expect(vm.dietSummary.consumedCalories == QuickMeal.presets[1].calories)
     }
 
     // MARK: - MacroCalculator

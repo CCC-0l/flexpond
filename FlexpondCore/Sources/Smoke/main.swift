@@ -171,6 +171,16 @@ do {
 
 // MARK: - AppViewModel behavior
 
+// Unlike the Testing-framework tests (which use unique #function-based
+// suite names), these hardcoded suite names would otherwise persist to
+// disk across separate `swift run` invocations and silently pollute the
+// next run's starting state (e.g. a leftover plan entry from last time
+// throwing off a "count == 1" assertion this run). Clear them first so
+// every run starts from a clean slate.
+for suiteName in ["flexpond.smoke", "flexpond.smoke.today", "flexpond.smoke.mealdate"] {
+    UserDefaults().removePersistentDomain(forName: suiteName)
+}
+
 let vm = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke")!))
 await vm.load()
 await MainActor.run {
@@ -203,6 +213,10 @@ await MainActor.run {
     check(vm.weightDelta(for: day1) == nil, "first chronological entry has no delta to compare against")
     check(vm.weightDelta(for: wk6) == 2, "weightDelta vs chronologically previous entry (180 - 178)")
     check((vm.bmiDelta(for: wk6) ?? 0) > 0, "gained weight -> bmiDelta positive")
+
+    vm.setPhotoIdentifier("day1-front", for: .front, entryID: "day1")
+    check(vm.physiqueEntries.first { $0.id == "day1" }?.photoFileName(for: .front) == "day1-front", "setPhotoIdentifier updates the given pose")
+    check(vm.physiqueEntries.first { $0.id == "day1" }?.photoFileName(for: .side) == "phys-day1-side", "setPhotoIdentifier leaves other poses untouched")
 
     vm.updateEntryWeight("day1", weightPounds: 175)
     check(vm.physiqueEntries.first { $0.id == "day1" }?.weightPounds == 175, "updateEntryWeight edits in place")
@@ -253,6 +267,24 @@ do {
         check(vm2.todaysCardioSchedule?.sessionLabel == "Zone 2 Base Run", "today's cardio schedule shows Monday's session")
         check(vm2.todaysCardioSchedule?.category == .moderateIntensityCardio, "cardio schedule item carries the right category")
         check(vm2.walkPlanItem == nil, "no walk goal set yet")
+    }
+}
+
+do {
+    var currentDate = Date()
+    let vm3 = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke.mealdate")!), now: { currentDate })
+    await vm3.load()
+    await MainActor.run {
+        currentDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        vm3.addQuickMeal(QuickMeal.presets[0])
+
+        currentDate = Date()
+        vm3.addQuickMeal(QuickMeal.presets[1])
+
+        check(vm3.mealLog.count == 2, "full meal history keeps entries from every day")
+        check(vm3.todaysMealLog.count == 1, "todaysMealLog filters out yesterday's entry")
+        check(vm3.todaysMealLog.first?.name == QuickMeal.presets[1].name, "todaysMealLog keeps only today's entry")
+        check(vm3.dietSummary.consumedCalories == QuickMeal.presets[1].calories, "dietSummary totals only count today, not full history")
     }
 }
 

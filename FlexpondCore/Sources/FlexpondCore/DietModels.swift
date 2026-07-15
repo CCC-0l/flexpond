@@ -197,14 +197,16 @@ public enum MacroCalculator {
 
 public struct MealEntry: Codable, Sendable, Identifiable, Equatable {
     public let id: String
+    public let date: Date
     public let name: String
     public let calories: Int
     public let proteinGrams: Int
     public let carbGrams: Int
     public let fatGrams: Int
 
-    public init(id: String = UUID().uuidString, name: String, calories: Int, proteinGrams: Int, carbGrams: Int, fatGrams: Int) {
+    public init(id: String = UUID().uuidString, date: Date, name: String, calories: Int, proteinGrams: Int, carbGrams: Int, fatGrams: Int) {
         self.id = id
+        self.date = date
         self.name = name
         self.calories = calories
         self.proteinGrams = proteinGrams

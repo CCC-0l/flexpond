@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 import FlexpondCore
 
 struct PhysiqueView: View {
@@ -84,7 +85,12 @@ private struct EntryPoseGrid: View {
 
             HStack(spacing: 8) {
                 ForEach(PhysiquePose.allCases) { pose in
-                    PosePhoto(label: pose.label, fileName: entry.photoFileName(for: pose))
+                    PosePhoto(label: pose.label, fileName: entry.photoFileName(for: pose)) { image in
+                        let identifier = "\(entry.id)-\(pose.rawValue)"
+                        if PhysiquePhotoCache.save(image, identifier: identifier) {
+                            vm.setPhotoIdentifier(identifier, for: pose, entryID: entry.id)
+                        }
+                    }
                 }
             }
         }
@@ -186,14 +192,51 @@ private struct LogEntryForm: View {
     }
 }
 
-/// Renders the bundled sample photo when available, otherwise the same
-/// placeholder tile used for user-added entries with no photo yet.
+/// Renders a bundled sample photo or a user-captured one (both resolve via
+/// `PhysiquePhotoCache`), or a placeholder tile if none exists yet. When
+/// `onPick` is provided (Timeline only — Compare passes nil, read-only),
+/// the whole tile is a `PhotosPicker` trigger for capturing/replacing that
+/// pose's photo. No Info.plist permission needed: `PhotosPicker` uses the
+/// system's out-of-process picker, not direct library access.
 private struct PosePhoto: View {
     var label: String
     var fileName: String?
+    var onPick: ((UIImage) -> Void)?
+    @State private var selectedItem: PhotosPickerItem?
+
+    init(label: String, fileName: String?, onPick: ((UIImage) -> Void)? = nil) {
+        self.label = label
+        self.fileName = fileName
+        self.onPick = onPick
+    }
 
     var body: some View {
         VStack(spacing: 6) {
+            if let onPick {
+                PhotosPicker(selection: $selectedItem, matching: .images) { tile }
+                    .buttonStyle(.plain)
+                    .onChange(of: selectedItem) { _, newItem in
+                        Task {
+                            guard let newItem,
+                                  let data = try? await newItem.loadTransferable(type: Data.self),
+                                  let uiImage = UIImage(data: data) else { return }
+                            onPick(uiImage)
+                            selectedItem = nil
+                        }
+                    }
+            } else {
+                tile
+            }
+
+            Text(label.uppercased())
+                .font(.label(10))
+                .foregroundStyle(Theme.textTertiary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var tile: some View {
+        ZStack(alignment: .bottomTrailing) {
             Group {
                 if let fileName, let uiImage = PhysiquePhotoCache.image(named: fileName) {
                     Image(uiImage: uiImage)
@@ -202,17 +245,21 @@ private struct PosePhoto: View {
                 } else {
                     Rectangle()
                         .fill(Theme.background)
-                        .overlay(Image(systemName: "photo").foregroundStyle(Theme.textFaint))
+                        .overlay(Image(systemName: onPick != nil ? "plus" : "photo").foregroundStyle(Theme.textFaint))
                 }
             }
             .aspectRatio(170.0 / 451.0, contentMode: .fit)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-            Text(label.uppercased())
-                .font(.label(10))
-                .foregroundStyle(Theme.textTertiary)
+            if onPick != nil {
+                Image(systemName: "camera.fill")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.white)
+                    .padding(6)
+                    .background(Circle().fill(Theme.accent))
+                    .padding(6)
+            }
         }
-        .frame(maxWidth: .infinity)
     }
 }
 

@@ -121,7 +121,7 @@ private struct MealLogSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: "Today's log", count: nil)
-            if vm.mealLog.isEmpty {
+            if vm.todaysMealLog.isEmpty {
                 Text("Nothing logged yet today.")
                     .font(.system(size: 12.5))
                     .foregroundStyle(Theme.textTertiary)
@@ -129,7 +129,7 @@ private struct MealLogSection: View {
                     .padding(20)
                     .cardBackground(radius: 14)
             } else {
-                ForEach(vm.mealLog) { meal in
+                ForEach(vm.todaysMealLog) { meal in
                     HStack(spacing: 12) {
                         VStack(alignment: .leading, spacing: 3) {
                             Text(meal.name)

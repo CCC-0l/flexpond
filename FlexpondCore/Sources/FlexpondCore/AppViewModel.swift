@@ -544,6 +544,17 @@ public final class AppViewModel: ObservableObject {
         persistPhysiqueEntries()
     }
 
+    /// Records that a photo was captured for `pose` on the given entry.
+    /// `identifier` is an opaque filename the app-target view layer already
+    /// saved to disk (via `PhysiquePhotoCache`) — this just updates which
+    /// identifier the entry points at; FlexpondCore itself has no UIKit/
+    /// file-I/O dependency.
+    public func setPhotoIdentifier(_ identifier: String, for pose: PhysiquePose, entryID: String) {
+        guard let index = physiqueEntries.firstIndex(where: { $0.id == entryID }) else { return }
+        physiqueEntries[index] = physiqueEntries[index].withPhotoIdentifier(identifier, for: pose)
+        persistPhysiqueEntries()
+    }
+
     public func deletePhysiqueEntry(_ id: String) {
         physiqueEntries.removeAll { $0.id == id }
         selectedEntryIDs.removeAll { $0 == id }
@@ -588,9 +599,17 @@ public final class AppViewModel: ObservableObject {
 
     public var macroTargets: MacroTargets { MacroCalculator.targets(for: dietProfile) }
 
+    /// Just today's entries, by calendar day — `mealLog` itself keeps full
+    /// history (useful for a future trends view), but "today's log" and
+    /// the calorie/macro totals must not silently accumulate every day
+    /// logged since install.
+    public var todaysMealLog: [MealEntry] {
+        mealLog.filter { calendar.isDate($0.date, inSameDayAs: now()) }
+    }
+
     public var dietSummary: DietSummary {
         let targets = macroTargets
-        let totals = mealLog.reduce((cals: 0, p: 0, c: 0, f: 0)) { acc, m in
+        let totals = todaysMealLog.reduce((cals: 0, p: 0, c: 0, f: 0)) { acc, m in
             (acc.cals + m.calories, acc.p + m.proteinGrams, acc.c + m.carbGrams, acc.f + m.fatGrams)
         }
         func progress(_ value: Int, _ target: Int) -> Double { target == 0 ? 0 : min(1, Double(value) / Double(target)) }
@@ -626,13 +645,14 @@ public final class AppViewModel: ObservableObject {
     }
 
     public func addQuickMeal(_ meal: QuickMeal) {
-        mealLog.append(MealEntry(name: meal.name, calories: meal.calories, proteinGrams: meal.proteinGrams, carbGrams: meal.carbGrams, fatGrams: meal.fatGrams))
+        mealLog.append(MealEntry(date: now(), name: meal.name, calories: meal.calories, proteinGrams: meal.proteinGrams, carbGrams: meal.carbGrams, fatGrams: meal.fatGrams))
         persistMealLog()
     }
 
     public func addCustomMeal() {
         guard canAddCustomMeal else { return }
         mealLog.append(MealEntry(
+            date: now(),
             name: newMealName.trimmingCharacters(in: .whitespaces),
             calories: Int(newMealCalories) ?? 0,
             proteinGrams: Int(newMealProtein) ?? 0,
