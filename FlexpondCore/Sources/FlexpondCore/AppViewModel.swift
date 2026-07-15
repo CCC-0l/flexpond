@@ -386,6 +386,16 @@ public final class AppViewModel: ObservableObject {
         ouraSyncing = false
     }
 
+    /// Called whenever the app becomes active (cold launch or returning
+    /// from background) so the score is fresh without the user having to
+    /// visit Readiness and tap Sync. Checks Keychain directly rather than
+    /// `ouraConnected` so it works correctly even if this fires before
+    /// `load()` has finished restoring the cached snapshot.
+    public func refreshOuraIfConnected() {
+        guard ouraService.loadToken() != nil else { return }
+        Task { await syncOura() }
+    }
+
     public func disconnectOura() {
         ouraService.deleteToken()
         ouraConnected = false
