@@ -11,16 +11,24 @@ public struct WeekDayCell: Identifiable, Sendable {
     public let isRestDay: Bool
 }
 
-/// A row on the Home tab's plan list. Read-only schedule info only — the
-/// redesign dropped per-exercise completion tracking entirely (no
-/// checkboxes, no "Complete session", no progress bars).
-public struct PlanRow: Identifiable, Sendable {
+/// Today's full schedule for one active program (lifting or cardio),
+/// rendered directly on Home — no per-exercise completion tracking (the
+/// redesign dropped that entirely: no checkboxes, no "Complete session",
+/// no progress bars, read-only schedule info only).
+public struct TodayScheduleItem: Identifiable, Sendable {
     public let id: String
+    public let category: ProgramCategory
     public let badge: String
-    public let title: String
-    public let subtitle: String
-    /// "Today · Upper A" / "Rest day today" / "" (Walk has none).
-    public let todayLabel: String
+    public let variantName: String
+    /// Training day label ("Upper A") or "Rest / Active Recovery".
+    public let sessionLabel: String
+    /// Today's weekday name, e.g. "Wednesday".
+    public let dayName: String
+    /// "Rest 60–90s between sets" — empty on a rest day.
+    public let restLine: String
+    /// Empty on a rest day.
+    public let exercises: [ExerciseEntry]
+    public let isRestDay: Bool
 }
 
 public struct VariantOption: Identifiable, Sendable {
@@ -211,27 +219,53 @@ public final class AppViewModel: ObservableObject {
         }
     }
 
-    public var planRows: [PlanRow] {
-        plan.map { item in
-            switch item {
-            case .walk(let id, let goal):
-                return PlanRow(id: id, badge: "WK", title: "Walk", subtitle: "\(goal.formatted()) steps / day", todayLabel: "")
-            case .program(let id, let category, let freq, let variantIdx):
-                let variants = WorkoutLibrary.variants(for: category, frequency: freq)
-                let variant = variantIdx < variants.count ? variants[variantIdx] : variants.first
-                let sched = WorkoutSchedule.dayIndices(for: freq)
-                let todayDi = sched[todayWeekday]
-                let restToday = todayDi < 0 || (variant.map { todayDi >= $0.days.count } ?? true)
-                let todayLabel = variant != nil ? (restToday ? "Rest day today" : "Today · \(variant!.days[todayDi].label)") : ""
-                return PlanRow(
-                    id: id,
-                    badge: category.badge,
-                    title: category.rawValue,
-                    subtitle: "\(variant?.name ?? "") · \(freq.rawValue)-day",
-                    todayLabel: todayLabel
-                )
-            }
+    /// Today's schedule for the plan's active lifting program, if any —
+    /// at most one, since `startProgram()` enforces one lifting + one
+    /// cardio program at a time.
+    public var todaysLiftingSchedule: TodayScheduleItem? {
+        todaysScheduleItem(forSection: .lifting)
+    }
+
+    /// Today's schedule for the plan's active cardio program (HIT or
+    /// Moderate-Intensity Cardio — Walk is handled separately via
+    /// `walkPlanItem`, since it has no day-by-day schedule).
+    public var todaysCardioSchedule: TodayScheduleItem? {
+        todaysScheduleItem(forSection: .cardio)
+    }
+
+    /// The plan's Walk goal, if set — Walk has no day-by-day schedule, so
+    /// Home renders it as a compact row rather than a full schedule card.
+    public var walkPlanItem: (id: String, goal: Int)? {
+        for item in plan {
+            if case .walk(let id, let goal) = item { return (id, goal) }
         }
+        return nil
+    }
+
+    private func todaysScheduleItem(forSection section: WorkoutSection) -> TodayScheduleItem? {
+        guard let item = plan.first(where: {
+            if case .program(_, let category, _, _) = $0 { return category.section == section }
+            return false
+        }), case .program(let id, let category, let freq, let variantIdx) = item else { return nil }
+
+        let variants = WorkoutLibrary.variants(for: category, frequency: freq)
+        let variant = variantIdx < variants.count ? variants[variantIdx] : variants.first
+        let sched = WorkoutSchedule.dayIndices(for: freq)
+        let todayDi = sched[todayWeekday]
+        let isRest = todayDi < 0 || (variant.map { todayDi >= $0.days.count } ?? true)
+        let day = isRest ? nil : variant?.days[todayDi]
+
+        return TodayScheduleItem(
+            id: id,
+            category: category,
+            badge: category.badge,
+            variantName: variant?.name ?? "",
+            sessionLabel: day?.label ?? "Rest / Active Recovery",
+            dayName: WorkoutSchedule.weekdayNames[todayWeekday],
+            restLine: isRest ? "" : "Rest \(category.restRange) \(category.restSuffix)",
+            exercises: day?.items ?? [],
+            isRestDay: isRest
+        )
     }
 
     // MARK: - Derived state: Home readiness teaser
@@ -276,6 +310,13 @@ public final class AppViewModel: ObservableObject {
         guard case .program(let category) = selectedCategory else { return }
         let id = PlanItem.programID(category: category, frequency: frequency, variantIndex: variantIndex)
         if !plan.contains(where: { $0.id == id }) {
+            // Only one lifting + one cardio program at a time — starting a
+            // new one replaces whatever else was in that section, so Home's
+            // "today" view never has to stack multiple schedules per section.
+            plan.removeAll { item in
+                if case .program(_, let existing, _, _) = item { return existing.section == category.section }
+                return false
+            }
             plan.append(.program(id: id, category: category, frequency: frequency, variantIndex: variantIndex))
             persistPlan()
         }
@@ -283,21 +324,28 @@ public final class AppViewModel: ObservableObject {
         workoutScreen = .today
     }
 
-    public func openPlanRow(_ row: PlanRow) {
-        guard let item = plan.first(where: { $0.id == row.id }) else { return }
-        switch item {
-        case .program(_, let category, let freq, let variantIdx):
-            selectedCategory = .program(category)
-            frequency = freq
-            variantIndex = variantIdx
-            selectedWeekday = nil
-            selectedTab = .workout
-            workoutScreen = .today
-        case .walk:
-            selectedCategory = .walk
-            selectedTab = .workout
-            workoutScreen = .detail
-        }
+    /// Opens the Workout tab's Today screen for whichever program is in
+    /// `section` — used by Home's lifting/cardio schedule cards.
+    private func openTodayScheduleItem(forSection section: WorkoutSection) {
+        guard let item = plan.first(where: {
+            if case .program(_, let category, _, _) = $0 { return category.section == section }
+            return false
+        }), case .program(_, let category, let freq, let variantIdx) = item else { return }
+        selectedCategory = .program(category)
+        frequency = freq
+        variantIndex = variantIdx
+        selectedWeekday = nil
+        selectedTab = .workout
+        workoutScreen = .today
+    }
+
+    public func openLiftingToday() { openTodayScheduleItem(forSection: .lifting) }
+    public func openCardioToday() { openTodayScheduleItem(forSection: .cardio) }
+
+    public func openWalk() {
+        selectedCategory = .walk
+        selectedTab = .workout
+        workoutScreen = .detail
     }
 
     public func removeFromPlan(_ id: String) {

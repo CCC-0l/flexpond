@@ -181,6 +181,16 @@ await MainActor.run {
     check(vm.plan.count == 1, "startProgram adds one plan entry")
     check(vm.workoutScreen == .today, "startProgram navigates to today screen")
 
+    vm.openCategory(.program(.powerlifting))
+    vm.selectFrequency(.fourDay)
+    vm.startProgram()
+    check(vm.plan.count == 1, "starting a 2nd lifting program replaces the 1st, doesn't stack")
+
+    vm.openCategory(.program(.moderateIntensityCardio))
+    vm.selectFrequency(.fourDay)
+    vm.startProgram()
+    check(vm.plan.count == 2, "a cardio program lives alongside the lifting one")
+
     check(vm.readiness?.score == 82, "readiness loads from repository")
     check(vm.physiqueEntries.count == 6, "6 seeded physique entries with real photos")
     check(vm.homeReadinessScore == 82, "home readiness falls back to static 82 pre-Oura-connect")
@@ -192,6 +202,33 @@ await MainActor.run {
     check(vm.selectedEntryIDs == [ids[0], ids[1]], "compare selects first two toggled entries")
     vm.toggleCompareEntry(ids[2])
     check(vm.selectedEntryIDs == [ids[1], ids[2]], "compare evicts oldest selection FIFO once 2 are picked")
+}
+
+do {
+    var comps = DateComponents()
+    comps.year = 2026; comps.month = 7; comps.day = 6 // Monday, Jul 6 2026
+    let calendar = Calendar(identifier: .gregorian)
+    let monday = calendar.date(from: comps)!
+    let vm2 = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke.today")!), calendar: calendar, now: { monday })
+    await vm2.load()
+    await MainActor.run {
+        vm2.openCategory(.program(.bodybuilding))
+        vm2.selectFrequency(.fourDay)
+        vm2.selectVariant(0) // Upper/Lower Split — Monday = "Upper A"
+        vm2.startProgram()
+
+        vm2.openCategory(.program(.moderateIntensityCardio))
+        vm2.selectFrequency(.fourDay)
+        vm2.selectVariant(0) // Outdoor Run Progression — Monday = "Zone 2 Base Run"
+        vm2.startProgram()
+
+        check(vm2.todaysLiftingSchedule?.sessionLabel == "Upper A", "today's lifting schedule shows Monday's session")
+        check(vm2.todaysLiftingSchedule?.isRestDay == false, "Monday is a training day for a 4-day BB split")
+        check(vm2.todaysLiftingSchedule?.exercises.isEmpty == false, "today's lifting schedule includes exercises")
+        check(vm2.todaysCardioSchedule?.sessionLabel == "Zone 2 Base Run", "today's cardio schedule shows Monday's session")
+        check(vm2.todaysCardioSchedule?.category == .moderateIntensityCardio, "cardio schedule item carries the right category")
+        check(vm2.walkPlanItem == nil, "no walk goal set yet")
+    }
 }
 
 print("\nAll smoke checks passed.")

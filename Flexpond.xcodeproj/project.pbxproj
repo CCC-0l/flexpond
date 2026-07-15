@@ -14,6 +14,7 @@
 		14CB4E842F5BE4AD1722A016 /* phys-24wk-back.png in Resources */ = {isa = PBXBuildFile; fileRef = BB33789772FF0EDECEC93930 /* phys-24wk-back.png */; };
 		19430621F451498E5C1F4520 /* phys-day1-back.png in Resources */ = {isa = PBXBuildFile; fileRef = F000D4F55968F152BC217EBE /* phys-day1-back.png */; };
 		2363C749F7C5DA7A195DAEC2 /* phys-6wk-front.png in Resources */ = {isa = PBXBuildFile; fileRef = 899D54414899F0D7DA481CC5 /* phys-6wk-front.png */; };
+		2432747521E1E5BF6E55EC2D /* ExerciseScheduleList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E7C8B537BAE5F8FD7E974B /* ExerciseScheduleList.swift */; };
 		2C46AA478EF74E07BB765035 /* ReadinessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF2FDFB958FE6517D7990702 /* ReadinessView.swift */; };
 		38FE4BF512098CDF68FFEEB8 /* phys-30wk-back.png in Resources */ = {isa = PBXBuildFile; fileRef = 63B849367DFF4DD765A9CD2B /* phys-30wk-back.png */; };
 		3BD6F528E47C1847634AC7BC /* phys-day1-front.png in Resources */ = {isa = PBXBuildFile; fileRef = DC6FF17A937721D822BDE91C /* phys-day1-front.png */; };
@@ -89,6 +90,7 @@
 		AFAA45CEDD2927390367C8A0 /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
 		B167FF07650CC96C4A40690F /* Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buttons.swift; sourceTree = "<group>"; };
 		B1A8DB4714945074414968A8 /* FlexpondApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexpondApp.swift; sourceTree = "<group>"; };
+		B7E7C8B537BAE5F8FD7E974B /* ExerciseScheduleList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseScheduleList.swift; sourceTree = "<group>"; };
 		BB33789772FF0EDECEC93930 /* phys-24wk-back.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-24wk-back.png"; sourceTree = "<group>"; };
 		BF2FDFB958FE6517D7990702 /* ReadinessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessView.swift; sourceTree = "<group>"; };
 		C39AEF32EA918CB2079375DA /* FlexpondCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexpondCard.swift; sourceTree = "<group>"; };
@@ -229,6 +231,7 @@
 			children = (
 				B167FF07650CC96C4A40690F /* Buttons.swift */,
 				2E73F2C64EAF6CD80A0DD24F /* CircularRing.swift */,
+				B7E7C8B537BAE5F8FD7E974B /* ExerciseScheduleList.swift */,
 				C39AEF32EA918CB2079375DA /* FlexpondCard.swift */,
 				148823DE771A3F2039B14CDB /* FlexpondHeader.swift */,
 				99D06925D29F5FC0EE1462B9 /* FlexpondTabBar.swift */,
@@ -369,6 +372,7 @@
 				828404A56CF609B434744BD6 /* DietContainerView.swift in Sources */,
 				ED850E55A005A3ED251114CC /* DietDashboardView.swift in Sources */,
 				F4CB3A3F81B9D326B8854D72 /* DietSetupView.swift in Sources */,
+				2432747521E1E5BF6E55EC2D /* ExerciseScheduleList.swift in Sources */,
 				D3A7E4BAE38F5A108E529911 /* FlexpondApp.swift in Sources */,
 				FCA118925E136333AC1F1490 /* FlexpondCard.swift in Sources */,
 				9AC8664FEA43A2784827CA8F /* FlexpondHeader.swift in Sources */,

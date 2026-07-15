@@ -8,6 +8,10 @@ struct HomeView: View {
         Date().formatted(.dateTime.weekday(.wide).month(.wide).day())
     }
 
+    private var isPlanEmpty: Bool {
+        vm.todaysLiftingSchedule == nil && vm.todaysCardioSchedule == nil && vm.walkPlanItem == nil
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 4) {
@@ -20,10 +24,10 @@ struct HomeView: View {
 
             ReadinessTeaserCard(vm: vm)
 
-            if vm.planRows.isEmpty {
+            if isPlanEmpty {
                 EmptyPlanCard(vm: vm)
             } else {
-                PlanSection(vm: vm)
+                TodayPlanSection(vm: vm)
             }
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
@@ -99,43 +103,113 @@ private struct EmptyPlanCard: View {
     }
 }
 
-private struct PlanSection: View {
+/// Today's full lifting + cardio schedule, visible the instant Home opens
+/// — no tap required to see what's due. Walk (no day-by-day schedule)
+/// shows as a compact row alongside the detailed cards.
+private struct TodayPlanSection: View {
     @ObservedObject var vm: AppViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            SectionHeader(title: "Your workouts", count: vm.planRows.count)
-            ForEach(vm.planRows) { row in
-                PlanRowView(row: row, vm: vm)
+        VStack(alignment: .leading, spacing: 14) {
+            SectionHeader(title: "Today's plan", count: nil)
+
+            if let lifting = vm.todaysLiftingSchedule {
+                TodayScheduleCard(item: lifting, onOpen: vm.openLiftingToday) {
+                    vm.removeFromPlan(lifting.id)
+                }
             }
+            if let cardio = vm.todaysCardioSchedule {
+                TodayScheduleCard(item: cardio, onOpen: vm.openCardioToday) {
+                    vm.removeFromPlan(cardio.id)
+                }
+            }
+            if let walk = vm.walkPlanItem {
+                WalkRow(goal: walk.goal, onOpen: vm.openWalk) {
+                    vm.removeFromPlan(walk.id)
+                }
+            }
+
             DashedCTAButton(title: "Add workout", action: vm.goAddWorkout)
         }
     }
 }
 
-private struct PlanRowView: View {
-    var row: PlanRow
-    @ObservedObject var vm: AppViewModel
+private struct TodayScheduleCard: View {
+    var item: TodayScheduleItem
+    var onOpen: () -> Void
+    var onRemove: () -> Void
 
     var body: some View {
-        HStack(spacing: 8) {
-            Button { vm.openPlanRow(row) } label: {
+        VStack(alignment: .leading, spacing: 14) {
+            Button(action: onOpen) {
                 HStack(spacing: 13) {
-                    IconBadge(text: row.badge, size: 40, cornerRadius: 11)
+                    IconBadge(text: item.badge, size: 40, cornerRadius: 11)
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(row.title)
+                        Text(item.category.rawValue)
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(Theme.textPrimary)
-                        Text(row.subtitle)
+                        Text("\(item.variantName) · \(item.dayName)")
                             .font(.system(size: 12))
                             .foregroundStyle(Theme.textSecondary)
                             .lineLimit(1)
-                        if !row.todayLabel.isEmpty {
-                            Text(row.todayLabel)
-                                .font(.label(11.5))
-                                .foregroundStyle(Theme.accent)
-                                .padding(.top, 4)
-                        }
+                    }
+                    Spacer(minLength: 8)
+                    RowChevron()
+                }
+            }
+            .buttonStyle(.plain)
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(item.sessionLabel)
+                    .font(.system(size: 20, weight: .heavy))
+                    .foregroundStyle(Theme.textPrimary)
+                if !item.restLine.isEmpty {
+                    Text(item.restLine)
+                        .font(.label(11))
+                        .foregroundStyle(Theme.textTertiary)
+                        .padding(.top, 2)
+                }
+            }
+
+            if item.isRestDay {
+                RestDayCard()
+            } else {
+                ExerciseList(items: item.exercises)
+            }
+
+            Button(action: onRemove) {
+                HStack(spacing: 6) {
+                    Image(systemName: "trash")
+                        .font(.system(size: 12))
+                    Text("Remove")
+                }
+                .font(.label(11))
+                .foregroundStyle(Theme.textTertiary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(15)
+        .cardBackground(radius: 20)
+    }
+}
+
+private struct WalkRow: View {
+    var goal: Int
+    var onOpen: () -> Void
+    var onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Button(action: onOpen) {
+                HStack(spacing: 13) {
+                    IconBadge(text: "WK", size: 40, cornerRadius: 11)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Walk")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(Theme.textPrimary)
+                        Text("\(goal.formatted()) steps / day")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Theme.textSecondary)
                     }
                     Spacer(minLength: 8)
                     RowChevron()
@@ -145,7 +219,7 @@ private struct PlanRowView: View {
             }
             .buttonStyle(.plain)
 
-            Button { vm.removeFromPlan(row.id) } label: {
+            Button(action: onRemove) {
                 Image(systemName: "trash")
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.textTertiary)

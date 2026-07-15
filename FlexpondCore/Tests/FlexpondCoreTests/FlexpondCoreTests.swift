@@ -80,6 +80,62 @@ struct FlexpondCoreTests {
         #expect(vm.workoutScreen == .today)
     }
 
+    @Test @MainActor func startProgramReplacesExistingProgramInSameSection() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        vm.openCategory(.program(.bodybuilding))
+        vm.selectFrequency(.fourDay)
+        vm.startProgram()
+        #expect(vm.plan.count == 1)
+
+        // Starting a second lifting program should replace the first, not stack.
+        vm.openCategory(.program(.powerlifting))
+        vm.selectFrequency(.fourDay)
+        vm.startProgram()
+        #expect(vm.plan.count == 1)
+        if case .program(_, let category, _, _) = vm.plan[0] {
+            #expect(category == .powerlifting)
+        } else {
+            Issue.record("expected a program plan item")
+        }
+
+        // A cardio program lives alongside the lifting one — different section.
+        vm.openCategory(.program(.moderateIntensityCardio))
+        vm.selectFrequency(.fourDay)
+        vm.startProgram()
+        #expect(vm.plan.count == 2)
+    }
+
+    @Test @MainActor func todaysScheduleReflectsLiftingAndCardioIndependently() async {
+        var comps = DateComponents()
+        comps.year = 2026; comps.month = 7; comps.day = 6 // Monday, Jul 6 2026
+        let calendar = Calendar(identifier: .gregorian)
+        let monday = calendar.date(from: comps)!
+
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), calendar: calendar, now: { monday })
+        await vm.load()
+
+        vm.openCategory(.program(.bodybuilding))
+        vm.selectFrequency(.fourDay)
+        vm.selectVariant(0) // Upper/Lower Split — Monday = "Upper A"
+        vm.startProgram()
+
+        vm.openCategory(.program(.moderateIntensityCardio))
+        vm.selectFrequency(.fourDay)
+        vm.selectVariant(0) // Outdoor Run Progression — Monday = "Zone 2 Base Run"
+        vm.startProgram()
+
+        #expect(vm.todaysLiftingSchedule?.sessionLabel == "Upper A")
+        #expect(vm.todaysLiftingSchedule?.isRestDay == false)
+        #expect(vm.todaysLiftingSchedule?.dayName == "Monday")
+        #expect(vm.todaysLiftingSchedule?.exercises.isEmpty == false)
+
+        #expect(vm.todaysCardioSchedule?.sessionLabel == "Zone 2 Base Run")
+        #expect(vm.todaysCardioSchedule?.category == .moderateIntensityCardio)
+
+        #expect(vm.walkPlanItem == nil)
+    }
+
     @Test @MainActor func readinessAndPhysiqueLoadFromRepository() async {
         let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
         await vm.load()
