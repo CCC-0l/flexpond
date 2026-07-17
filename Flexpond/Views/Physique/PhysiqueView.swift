@@ -245,13 +245,19 @@ private struct PosePhoto: View {
             // corners for any photo whose ratio doesn't already match the
             // tile's — which the bundled sample photos happened to, but a
             // real picked photo usually won't.
+            //
+            // `.fit` (not `.fill`) is deliberate: full-body progress photos
+            // are usually much taller than this 3:4 tile, and `.fill` crops
+            // to cover the tile — silently chopping off the head and/or
+            // feet. For a comparison feature, showing the whole body
+            // letterboxed beats losing part of the subject.
             Color.clear
                 .aspectRatio(3.0 / 4.0, contentMode: .fit)
                 .overlay {
                     if let fileName, let uiImage = PhysiquePhotoCache.image(named: fileName) {
                         Image(uiImage: uiImage)
                             .resizable()
-                            .aspectRatio(contentMode: .fill)
+                            .aspectRatio(contentMode: .fit)
                     } else {
                         Rectangle()
                             .fill(Theme.background)
