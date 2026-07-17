@@ -232,15 +232,157 @@ struct FlexpondCoreTests {
         await vm.load()
 
         currentDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
-        vm.addQuickMeal(QuickMeal.presets[0])
+        vm.logSavedFood(SavedFood.starterLibrary[0])
 
         currentDate = Date()
-        vm.addQuickMeal(QuickMeal.presets[1])
+        vm.logSavedFood(SavedFood.starterLibrary[1])
 
         #expect(vm.mealLog.count == 2)
         #expect(vm.todaysMealLog.count == 1)
-        #expect(vm.todaysMealLog.first?.name == QuickMeal.presets[1].name)
-        #expect(vm.dietSummary.consumedCalories == QuickMeal.presets[1].calories)
+        #expect(vm.todaysMealLog.first?.name == SavedFood.starterLibrary[1].name)
+        #expect(vm.dietSummary.consumedCalories == SavedFood.starterLibrary[1].calories)
+    }
+
+    // MARK: - MealType / food library / meal editing / history
+
+    @Test func mealTypeCurrentAtTimeOfDayThresholds() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        func date(hour: Int) -> Date {
+            var comps = DateComponents()
+            comps.year = 2026; comps.month = 7; comps.day = 6; comps.hour = hour
+            comps.timeZone = calendar.timeZone
+            return calendar.date(from: comps)!
+        }
+        #expect(MealType.current(at: date(hour: 0), calendar: calendar) == .breakfast)
+        #expect(MealType.current(at: date(hour: 10), calendar: calendar) == .breakfast)
+        #expect(MealType.current(at: date(hour: 11), calendar: calendar) == .lunch)
+        #expect(MealType.current(at: date(hour: 14), calendar: calendar) == .lunch)
+        #expect(MealType.current(at: date(hour: 15), calendar: calendar) == .dinner)
+        #expect(MealType.current(at: date(hour: 20), calendar: calendar) == .dinner)
+        #expect(MealType.current(at: date(hour: 21), calendar: calendar) == .snack)
+        #expect(MealType.current(at: date(hour: 23), calendar: calendar) == .snack)
+    }
+
+    @Test @MainActor func logSavedFoodUsesGivenOrDefaultMealType() async {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        var comps = DateComponents()
+        comps.year = 2026; comps.month = 7; comps.day = 6; comps.hour = 8 // breakfast window
+        comps.timeZone = calendar.timeZone
+        let morning = calendar.date(from: comps)!
+
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), calendar: calendar, now: { morning })
+        await vm.load()
+
+        vm.logSavedFood(SavedFood.starterLibrary[0])
+        #expect(vm.mealLog.last?.mealType == .breakfast)
+
+        vm.logSavedFood(SavedFood.starterLibrary[1], mealType: .dinner)
+        #expect(vm.mealLog.last?.mealType == .dinner)
+    }
+
+    @Test @MainActor func saveMealAddsNewCustomFoodToLibraryAndDedupesByName() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        let startingCount = vm.savedFoods.count
+
+        vm.newMealName = "Test Custom Meal"
+        vm.newMealCalories = "300"
+        vm.newMealProtein = "20"
+        vm.newMealCarb = "30"
+        vm.newMealFat = "10"
+        vm.saveMeal()
+
+        #expect(vm.savedFoods.count == startingCount + 1)
+        #expect(vm.mealLog.count == 1)
+        #expect(vm.newMealName == "") // draft cleared after save
+
+        // Re-logging the same name (case-insensitive) shouldn't duplicate the library entry.
+        vm.newMealName = "test custom meal"
+        vm.newMealCalories = "300"
+        vm.newMealProtein = "20"
+        vm.newMealCarb = "30"
+        vm.newMealFat = "10"
+        vm.saveMeal()
+
+        #expect(vm.savedFoods.count == startingCount + 1) // no new library entry
+        #expect(vm.mealLog.count == 2) // but a 2nd log entry was created
+    }
+
+    @Test @MainActor func beginEditingMealPopulatesDraftAndSaveUpdatesInPlace() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        vm.logSavedFood(SavedFood.starterLibrary[0], mealType: .breakfast)
+        let entryID = vm.mealLog[0].id
+        let libraryCountBefore = vm.savedFoods.count
+
+        vm.beginEditingMeal(entryID)
+        #expect(vm.newMealName == SavedFood.starterLibrary[0].name)
+        #expect(vm.editingMealID == entryID)
+
+        vm.newMealCalories = "999"
+        vm.newMealType = .dinner
+        vm.saveMeal()
+
+        #expect(vm.mealLog.count == 1) // updated in place, not appended
+        #expect(vm.mealLog[0].calories == 999)
+        #expect(vm.mealLog[0].mealType == .dinner)
+        #expect(vm.editingMealID == nil)
+        #expect(vm.savedFoods.count == libraryCountBefore) // editing an existing entry doesn't touch the library
+    }
+
+    @Test @MainActor func cancelEditingMealClearsDraftWithoutSaving() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        vm.logSavedFood(SavedFood.starterLibrary[0])
+        vm.beginEditingMeal(vm.mealLog[0].id)
+        vm.newMealCalories = "999"
+        vm.cancelEditingMeal()
+
+        #expect(vm.editingMealID == nil)
+        #expect(vm.newMealName == "")
+        #expect(vm.mealLog[0].calories == SavedFood.starterLibrary[0].calories) // unchanged
+    }
+
+    @Test @MainActor func todaysMealTypeSummariesAlwaysReturnsFourGroupsInOrder() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        vm.logSavedFood(SavedFood.starterLibrary[0], mealType: .breakfast)
+        vm.logSavedFood(SavedFood.starterLibrary[1], mealType: .breakfast)
+        vm.logSavedFood(SavedFood.starterLibrary[2], mealType: .dinner)
+
+        let summaries = vm.todaysMealTypeSummaries
+        #expect(summaries.map(\.type) == [.breakfast, .lunch, .dinner, .snack])
+        #expect(summaries[0].entries.count == 2)
+        #expect(summaries[0].calories == SavedFood.starterLibrary[0].calories + SavedFood.starterLibrary[1].calories)
+        #expect(summaries[1].entries.isEmpty)
+        #expect(summaries[2].entries.count == 1)
+        #expect(summaries[3].entries.isEmpty)
+    }
+
+    @Test @MainActor func mealHistoryZeroFillsGapDaysAndAveragesSkipThem() async {
+        var currentDate = Date()
+        let calendar = Calendar.current
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), now: { currentDate })
+        await vm.load()
+
+        currentDate = calendar.date(byAdding: .day, value: -2, to: Date())!
+        vm.logSavedFood(SavedFood.starterLibrary[0]) // 520 cal, 2 days ago
+
+        currentDate = Date()
+        vm.logSavedFood(SavedFood.starterLibrary[1]) // 180 cal, today — yesterday left empty
+
+        let history = vm.mealHistory(days: 3)
+        #expect(history.count == 3)
+        #expect(history[0].calories == SavedFood.starterLibrary[0].calories)
+        #expect(history[1].calories == 0)
+        #expect(history[2].calories == SavedFood.starterLibrary[1].calories)
+        #expect(history.map(\.date) == history.map(\.date).sorted())
+
+        let averages = vm.mealHistoryAverages(days: 3)
+        #expect(averages.daysLogged == 2)
+        #expect(averages.averageCalories == (SavedFood.starterLibrary[0].calories + SavedFood.starterLibrary[1].calories) / 2)
     }
 
     // MARK: - MacroCalculator

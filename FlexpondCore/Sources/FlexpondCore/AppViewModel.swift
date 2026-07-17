@@ -116,13 +116,17 @@ public final class AppViewModel: ObservableObject {
     // Diet
     @Published public var dietProfile: DietProfile = DietProfile()
     @Published public var dietScreen: DietScreen = .setup
+    @Published public var dietHistoryMode: DietHistoryMode = .today
     @Published public var dietAdvancedOpen: Bool = false
     @Published public private(set) var mealLog: [MealEntry] = []
+    @Published public private(set) var savedFoods: [SavedFood] = []
     @Published public var newMealName: String = ""
     @Published public var newMealCalories: String = ""
     @Published public var newMealProtein: String = ""
     @Published public var newMealCarb: String = ""
     @Published public var newMealFat: String = ""
+    @Published public var newMealType: MealType = .breakfast
+    @Published public var editingMealID: String?
 
     public init(
         repository: WorkoutRepository = LocalWorkoutRepository(),
@@ -134,6 +138,7 @@ public final class AppViewModel: ObservableObject {
         self.ouraService = ouraService
         self.calendar = calendar
         self.now = now
+        self.newMealType = MealType.current(at: now(), calendar: calendar)
         Task { await load() }
     }
 
@@ -143,6 +148,7 @@ public final class AppViewModel: ObservableObject {
         async let physiqueTask = repository.fetchPhysiqueEntries()
         async let dietProfileTask = repository.fetchDietProfile()
         async let mealLogTask = repository.fetchMealLog()
+        async let savedFoodsTask = repository.fetchSavedFoods()
         async let walkGoalTask = repository.fetchWalkGoal()
         async let ouraSnapshotTask = repository.fetchOuraSnapshot()
 
@@ -154,6 +160,7 @@ public final class AppViewModel: ObservableObject {
             self.dietScreen = .dashboard
         }
         if let log = try? await mealLogTask { self.mealLog = log }
+        if let foods = try? await savedFoodsTask { self.savedFoods = foods }
         if let goal = try? await walkGoalTask { self.walkGoal = goal }
         if let snapshot = try? await ouraSnapshotTask, ouraService.loadToken() != nil {
             ouraConnected = true
@@ -641,40 +648,142 @@ public final class AppViewModel: ObservableObject {
 
     public func editDietProfile() { dietScreen = .setup }
 
+    public func setDietHistoryMode(_ mode: DietHistoryMode) { dietHistoryMode = mode }
+
     public var canAddCustomMeal: Bool {
         !newMealName.trimmingCharacters(in: .whitespaces).isEmpty && (Int(newMealCalories) ?? 0) > 0
     }
 
-    public func addQuickMeal(_ meal: QuickMeal) {
-        mealLog.append(MealEntry(date: now(), name: meal.name, calories: meal.calories, proteinGrams: meal.proteinGrams, carbGrams: meal.carbGrams, fatGrams: meal.fatGrams))
+    /// Today's log grouped into the 4 `MealType`s, always all 4 (even
+    /// empty) so every section has somewhere to add to — matches how
+    /// MyFitnessPal/Lose It always show all meal sections.
+    public var todaysMealTypeSummaries: [MealTypeSummary] {
+        MealType.allCases.map { type in
+            let entries = todaysMealLog.filter { $0.mealType == type }
+            return MealTypeSummary(type: type, entries: entries, calories: entries.reduce(0) { $0 + $1.calories })
+        }
+    }
+
+    /// Logs a saved-food-library item immediately, defaulting to the
+    /// current time-of-day meal type (overridable later via editing).
+    public func logSavedFood(_ food: SavedFood, mealType: MealType? = nil) {
+        let type = mealType ?? MealType.current(at: now(), calendar: calendar)
+        mealLog.append(MealEntry(date: now(), mealType: type, name: food.name, calories: food.calories, proteinGrams: food.proteinGrams, carbGrams: food.carbGrams, fatGrams: food.fatGrams))
         persistMealLog()
     }
 
-    public func addCustomMeal() {
+    public func deleteSavedFood(_ id: String) {
+        savedFoods.removeAll { $0.id == id }
+        persistSavedFoods()
+    }
+
+    /// Populates the log-meal draft from an existing entry and marks it as
+    /// the one being edited — the form (and `saveMeal()`) reuse the same
+    /// draft fields for both adding and editing rather than introducing
+    /// parallel state.
+    public func beginEditingMeal(_ id: String) {
+        guard let entry = mealLog.first(where: { $0.id == id }) else { return }
+        editingMealID = id
+        newMealName = entry.name
+        newMealCalories = String(entry.calories)
+        newMealProtein = String(entry.proteinGrams)
+        newMealCarb = String(entry.carbGrams)
+        newMealFat = String(entry.fatGrams)
+        newMealType = entry.mealType
+    }
+
+    public func cancelEditingMeal() { clearMealDraft() }
+
+    /// Updates the entry in place if `editingMealID` is set, otherwise
+    /// appends a new one and — since this is a hand-typed *new* food, not a
+    /// re-log from the library — also saves it to `savedFoods` so it's
+    /// reusable next time (deduped by case-insensitive name match, so
+    /// re-typing something already in the library doesn't create a copy).
+    public func saveMeal() {
         guard canAddCustomMeal else { return }
-        mealLog.append(MealEntry(
-            date: now(),
-            name: newMealName.trimmingCharacters(in: .whitespaces),
-            calories: Int(newMealCalories) ?? 0,
-            proteinGrams: Int(newMealProtein) ?? 0,
-            carbGrams: Int(newMealCarb) ?? 0,
-            fatGrams: Int(newMealFat) ?? 0
-        ))
+        let name = newMealName.trimmingCharacters(in: .whitespaces)
+        let calories = Int(newMealCalories) ?? 0
+        let protein = Int(newMealProtein) ?? 0
+        let carb = Int(newMealCarb) ?? 0
+        let fat = Int(newMealFat) ?? 0
+
+        if let editingMealID, let index = mealLog.firstIndex(where: { $0.id == editingMealID }) {
+            let existing = mealLog[index]
+            mealLog[index] = MealEntry(id: existing.id, date: existing.date, mealType: newMealType, name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat)
+        } else {
+            mealLog.append(MealEntry(date: now(), mealType: newMealType, name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat))
+            addToLibraryIfNew(name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat)
+        }
+
+        clearMealDraft()
+        persistMealLog()
+    }
+
+    private func addToLibraryIfNew(name: String, calories: Int, proteinGrams: Int, carbGrams: Int, fatGrams: Int) {
+        let alreadyExists = savedFoods.contains { $0.name.caseInsensitiveCompare(name) == .orderedSame }
+        guard !alreadyExists else { return }
+        savedFoods.append(SavedFood(name: name, calories: calories, proteinGrams: proteinGrams, carbGrams: carbGrams, fatGrams: fatGrams))
+        persistSavedFoods()
+    }
+
+    private func clearMealDraft() {
         newMealName = ""
         newMealCalories = ""
         newMealProtein = ""
         newMealCarb = ""
         newMealFat = ""
-        persistMealLog()
+        newMealType = MealType.current(at: now(), calendar: calendar)
+        editingMealID = nil
     }
 
     public func removeMeal(_ id: String) {
         mealLog.removeAll { $0.id == id }
+        if editingMealID == id { clearMealDraft() }
         persistMealLog()
     }
 
     private func persistMealLog() {
         let snapshot = mealLog
         Task { try? await repository.saveMealLog(snapshot) }
+    }
+
+    private func persistSavedFoods() {
+        let snapshot = savedFoods
+        Task { try? await repository.saveSavedFoods(snapshot) }
+    }
+
+    // MARK: - Diet history / trends
+
+    /// Full `mealLog` history (not just today) grouped by calendar day for
+    /// the trailing `days` days, oldest→newest, zero-filled for days with
+    /// nothing logged so a chart has a continuous x-axis.
+    public func mealHistory(days: Int) -> [DailyMacroSummary] {
+        let today = calendar.startOfDay(for: now())
+        return (0..<days).reversed().map { offset in
+            let day = calendar.date(byAdding: .day, value: -offset, to: today) ?? today
+            let entries = mealLog.filter { calendar.isDate($0.date, inSameDayAs: day) }
+            let totals = entries.reduce((cals: 0, p: 0, c: 0, f: 0)) { acc, m in
+                (acc.cals + m.calories, acc.p + m.proteinGrams, acc.c + m.carbGrams, acc.f + m.fatGrams)
+            }
+            return DailyMacroSummary(date: day, calories: totals.cals, proteinGrams: totals.p, carbGrams: totals.c, fatGrams: totals.f)
+        }
+    }
+
+    /// Averages over the same trailing window, skipping unlogged (zero)
+    /// days so a few good days aren't dragged down by days the app wasn't
+    /// opened.
+    public func mealHistoryAverages(days: Int) -> MealHistoryAverages {
+        let loggedDays = mealHistory(days: days).filter { $0.calories > 0 }
+        let count = max(1, loggedDays.count)
+        let totals = loggedDays.reduce((cals: 0, p: 0, c: 0, f: 0)) { acc, d in
+            (acc.cals + d.calories, acc.p + d.proteinGrams, acc.c + d.carbGrams, acc.f + d.fatGrams)
+        }
+        return MealHistoryAverages(
+            averageCalories: totals.cals / count,
+            averageProteinGrams: totals.p / count,
+            averageCarbGrams: totals.c / count,
+            averageFatGrams: totals.f / count,
+            daysLogged: loggedDays.count
+        )
     }
 }

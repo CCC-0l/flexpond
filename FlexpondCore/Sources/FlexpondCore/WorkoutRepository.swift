@@ -16,6 +16,8 @@ public protocol WorkoutRepository: Sendable {
     func saveDietProfile(_ profile: DietProfile) async throws
     func fetchMealLog() async throws -> [MealEntry]
     func saveMealLog(_ log: [MealEntry]) async throws
+    func fetchSavedFoods() async throws -> [SavedFood]
+    func saveSavedFoods(_ foods: [SavedFood]) async throws
     func fetchWalkGoal() async throws -> Int?
     func saveWalkGoal(_ goal: Int) async throws
     func fetchOuraSnapshot() async throws -> OuraSnapshot?
@@ -35,6 +37,7 @@ public actor LocalWorkoutRepository: WorkoutRepository {
         static let physiqueEntries = "flexpond.physiqueEntries"
         static let dietProfile = "flexpond.dietProfile"
         static let mealLog = "flexpond.mealLog"
+        static let savedFoods = "flexpond.savedFoods"
         static let walkGoal = "flexpond.walkGoal"
         static let ouraSnapshot = "flexpond.ouraSnapshot"
     }
@@ -112,6 +115,14 @@ public actor LocalWorkoutRepository: WorkoutRepository {
 
     public func saveMealLog(_ log: [MealEntry]) async throws {
         save(log, forKey: Key.mealLog)
+    }
+
+    public func fetchSavedFoods() async throws -> [SavedFood] {
+        load([SavedFood].self, forKey: Key.savedFoods) ?? SavedFood.starterLibrary
+    }
+
+    public func saveSavedFoods(_ foods: [SavedFood]) async throws {
+        save(foods, forKey: Key.savedFoods)
     }
 
     // MARK: Walk goal

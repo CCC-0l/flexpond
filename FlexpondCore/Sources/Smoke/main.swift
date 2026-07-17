@@ -192,7 +192,7 @@ do {
 // next run's starting state (e.g. a leftover plan entry from last time
 // throwing off a "count == 1" assertion this run). Clear them first so
 // every run starts from a clean slate.
-for suiteName in ["flexpond.smoke", "flexpond.smoke.today", "flexpond.smoke.mealdate"] {
+for suiteName in ["flexpond.smoke", "flexpond.smoke.today", "flexpond.smoke.mealdate", "flexpond.smoke.mealtype", "flexpond.smoke.mealedit", "flexpond.smoke.mealgroups", "flexpond.smoke.mealhistory"] {
     UserDefaults().removePersistentDomain(forName: suiteName)
 }
 
@@ -296,15 +296,143 @@ do {
     await vm3.load()
     await MainActor.run {
         currentDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
-        vm3.addQuickMeal(QuickMeal.presets[0])
+        vm3.logSavedFood(SavedFood.starterLibrary[0])
 
         currentDate = Date()
-        vm3.addQuickMeal(QuickMeal.presets[1])
+        vm3.logSavedFood(SavedFood.starterLibrary[1])
 
         check(vm3.mealLog.count == 2, "full meal history keeps entries from every day")
         check(vm3.todaysMealLog.count == 1, "todaysMealLog filters out yesterday's entry")
-        check(vm3.todaysMealLog.first?.name == QuickMeal.presets[1].name, "todaysMealLog keeps only today's entry")
-        check(vm3.dietSummary.consumedCalories == QuickMeal.presets[1].calories, "dietSummary totals only count today, not full history")
+        check(vm3.todaysMealLog.first?.name == SavedFood.starterLibrary[1].name, "todaysMealLog keeps only today's entry")
+        check(vm3.dietSummary.consumedCalories == SavedFood.starterLibrary[1].calories, "dietSummary totals only count today, not full history")
+    }
+}
+
+// MARK: - MealType / food library / meal editing / history
+
+do {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "UTC")!
+    func hourDate(_ hour: Int) -> Date {
+        var comps = DateComponents()
+        comps.year = 2026; comps.month = 7; comps.day = 6; comps.hour = hour
+        comps.timeZone = calendar.timeZone
+        return calendar.date(from: comps)!
+    }
+    check(MealType.current(at: hourDate(0), calendar: calendar) == .breakfast, "midnight defaults to breakfast")
+    check(MealType.current(at: hourDate(10), calendar: calendar) == .breakfast, "10am defaults to breakfast")
+    check(MealType.current(at: hourDate(11), calendar: calendar) == .lunch, "11am defaults to lunch")
+    check(MealType.current(at: hourDate(14), calendar: calendar) == .lunch, "2pm defaults to lunch")
+    check(MealType.current(at: hourDate(15), calendar: calendar) == .dinner, "3pm defaults to dinner")
+    check(MealType.current(at: hourDate(20), calendar: calendar) == .dinner, "8pm defaults to dinner")
+    check(MealType.current(at: hourDate(21), calendar: calendar) == .snack, "9pm defaults to snack")
+    check(MealType.current(at: hourDate(23), calendar: calendar) == .snack, "11pm defaults to snack")
+}
+
+do {
+    var calendar = Calendar(identifier: .gregorian)
+    calendar.timeZone = TimeZone(identifier: "UTC")!
+    var comps = DateComponents()
+    comps.year = 2026; comps.month = 7; comps.day = 6; comps.hour = 8
+    comps.timeZone = calendar.timeZone
+    let morning = calendar.date(from: comps)!
+    let vm4 = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke.mealtype")!), calendar: calendar, now: { morning })
+    await vm4.load()
+    await MainActor.run {
+        vm4.logSavedFood(SavedFood.starterLibrary[0])
+        check(vm4.mealLog.last?.mealType == .breakfast, "logSavedFood defaults to the time-of-day meal type")
+        vm4.logSavedFood(SavedFood.starterLibrary[1], mealType: .dinner)
+        check(vm4.mealLog.last?.mealType == .dinner, "logSavedFood honors an explicit meal type")
+    }
+}
+
+do {
+    let vm5 = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke.mealedit")!))
+    await vm5.load()
+    await MainActor.run {
+        let startingCount = vm5.savedFoods.count
+        vm5.newMealName = "Test Custom Meal"
+        vm5.newMealCalories = "300"
+        vm5.newMealProtein = "20"
+        vm5.newMealCarb = "30"
+        vm5.newMealFat = "10"
+        vm5.saveMeal()
+        check(vm5.savedFoods.count == startingCount + 1, "saveMeal adds a new custom food to the library")
+        check(vm5.mealLog.count == 1, "saveMeal logs the entry")
+        check(vm5.newMealName == "", "saveMeal clears the draft")
+
+        vm5.newMealName = "test custom meal"
+        vm5.newMealCalories = "300"
+        vm5.newMealProtein = "20"
+        vm5.newMealCarb = "30"
+        vm5.newMealFat = "10"
+        vm5.saveMeal()
+        check(vm5.savedFoods.count == startingCount + 1, "re-logging the same name (case-insensitive) doesn't duplicate the library entry")
+        check(vm5.mealLog.count == 2, "but a 2nd log entry was still created")
+
+        vm5.logSavedFood(SavedFood.starterLibrary[0], mealType: .breakfast)
+        let entryID = vm5.mealLog.last!.id
+        let libraryCountBefore = vm5.savedFoods.count
+        vm5.beginEditingMeal(entryID)
+        check(vm5.newMealName == SavedFood.starterLibrary[0].name, "beginEditingMeal populates the draft")
+        check(vm5.editingMealID == entryID, "beginEditingMeal marks the entry as being edited")
+        vm5.newMealCalories = "999"
+        vm5.newMealType = .dinner
+        vm5.saveMeal()
+        check(vm5.mealLog.count == 3, "saveMeal updates the edited entry in place, doesn't append")
+        check(vm5.mealLog.last?.calories == 999, "edited entry reflects the new value")
+        check(vm5.mealLog.last?.mealType == .dinner, "edited entry reflects the new meal type")
+        check(vm5.editingMealID == nil, "saveMeal clears editingMealID")
+        check(vm5.savedFoods.count == libraryCountBefore, "editing an existing entry doesn't touch the library")
+
+        vm5.beginEditingMeal(vm5.mealLog.last!.id)
+        vm5.newMealCalories = "1"
+        vm5.cancelEditingMeal()
+        check(vm5.editingMealID == nil, "cancelEditingMeal clears editingMealID")
+        check(vm5.mealLog.last?.calories == 999, "cancelEditingMeal discards the in-progress edit")
+    }
+}
+
+do {
+    let vm6 = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke.mealgroups")!))
+    await vm6.load()
+    await MainActor.run {
+        vm6.logSavedFood(SavedFood.starterLibrary[0], mealType: .breakfast)
+        vm6.logSavedFood(SavedFood.starterLibrary[1], mealType: .breakfast)
+        vm6.logSavedFood(SavedFood.starterLibrary[2], mealType: .dinner)
+
+        let summaries = vm6.todaysMealTypeSummaries
+        check(summaries.map { $0.type } == [.breakfast, .lunch, .dinner, .snack], "todaysMealTypeSummaries always returns all 4 types in order")
+        check(summaries[0].entries.count == 2, "breakfast group has 2 entries")
+        check(summaries[0].calories == SavedFood.starterLibrary[0].calories + SavedFood.starterLibrary[1].calories, "breakfast subtotal sums correctly")
+        check(summaries[1].entries.isEmpty, "lunch group is empty but still present")
+        check(summaries[2].entries.count == 1, "dinner group has 1 entry")
+        check(summaries[3].entries.isEmpty, "snack group is empty but still present")
+    }
+}
+
+do {
+    var currentDate = Date()
+    let calendar = Calendar.current
+    let vm7 = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke.mealhistory")!), now: { currentDate })
+    await vm7.load()
+    await MainActor.run {
+        currentDate = calendar.date(byAdding: .day, value: -2, to: Date())!
+        vm7.logSavedFood(SavedFood.starterLibrary[0])
+
+        currentDate = Date()
+        vm7.logSavedFood(SavedFood.starterLibrary[1])
+
+        let history = vm7.mealHistory(days: 3)
+        check(history.count == 3, "mealHistory returns exactly the requested number of days")
+        check(history[0].calories == SavedFood.starterLibrary[0].calories, "oldest day has the 2-days-ago entry")
+        check(history[1].calories == 0, "the empty gap day is zero-filled")
+        check(history[2].calories == SavedFood.starterLibrary[1].calories, "newest day has today's entry")
+        check(history.map { $0.date } == history.map { $0.date }.sorted(), "mealHistory is oldest-to-newest")
+
+        let averages = vm7.mealHistoryAverages(days: 3)
+        check(averages.daysLogged == 2, "mealHistoryAverages counts only logged days")
+        check(averages.averageCalories == (SavedFood.starterLibrary[0].calories + SavedFood.starterLibrary[1].calories) / 2, "average skips the zero-filled gap day")
     }
 }
 

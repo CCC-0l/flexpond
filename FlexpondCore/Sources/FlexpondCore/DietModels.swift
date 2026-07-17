@@ -8,6 +8,31 @@ public enum DietScreen: Sendable {
     case setup, dashboard
 }
 
+/// Which of "Today" or "Trends" the Diet dashboard is showing — mirrors
+/// `PhysiqueViewMode`'s Timeline/Compare pattern.
+public enum DietHistoryMode: Sendable {
+    case today, trends
+}
+
+public enum MealType: String, CaseIterable, Codable, Identifiable, Sendable {
+    case breakfast, lunch, dinner, snack
+
+    public var id: String { rawValue }
+    public var label: String { rawValue.capitalized }
+
+    /// A time-of-day default, mirroring how MyFitnessPal/Lose It pre-select
+    /// "the meal you're probably logging right now" — the user can always
+    /// override it, including after the fact via editing.
+    public static func current(at date: Date, calendar: Calendar = .current) -> MealType {
+        switch calendar.component(.hour, from: date) {
+        case 0..<11: return .breakfast
+        case 11..<15: return .lunch
+        case 15..<21: return .dinner
+        default: return .snack
+        }
+    }
+}
+
 public enum BMRFormula: String, Codable, Sendable {
     case mifflin, katch
 }
@@ -224,15 +249,17 @@ public enum MacroCalculator {
 public struct MealEntry: Codable, Sendable, Identifiable, Equatable {
     public let id: String
     public let date: Date
+    public let mealType: MealType
     public let name: String
     public let calories: Int
     public let proteinGrams: Int
     public let carbGrams: Int
     public let fatGrams: Int
 
-    public init(id: String = UUID().uuidString, date: Date, name: String, calories: Int, proteinGrams: Int, carbGrams: Int, fatGrams: Int) {
+    public init(id: String = UUID().uuidString, date: Date, mealType: MealType, name: String, calories: Int, proteinGrams: Int, carbGrams: Int, fatGrams: Int) {
         self.id = id
         self.date = date
+        self.mealType = mealType
         self.name = name
         self.calories = calories
         self.proteinGrams = proteinGrams
@@ -241,19 +268,55 @@ public struct MealEntry: Codable, Sendable, Identifiable, Equatable {
     }
 }
 
-public struct QuickMeal: Sendable, Identifiable {
-    public let id = UUID()
+/// A food the user has saved once and can re-log without retyping macros —
+/// the "personal food library." Seeded with 4 starter items (the same ones
+/// the old fixed `QuickMeal` presets used); grows as the user logs new
+/// custom meals (see `AppViewModel.saveMeal()`).
+public struct SavedFood: Codable, Sendable, Identifiable, Equatable {
+    public let id: String
     public let name: String
     public let calories: Int
     public let proteinGrams: Int
     public let carbGrams: Int
     public let fatGrams: Int
 
-    /// The 4 fixed presets from the mockup (`dc.html` `QUICK_MEALS`).
-    public static let presets: [QuickMeal] = [
-        QuickMeal(name: "Chicken & Rice Bowl", calories: 520, proteinGrams: 45, carbGrams: 55, fatGrams: 12),
-        QuickMeal(name: "Protein Shake", calories: 180, proteinGrams: 30, carbGrams: 8, fatGrams: 3),
-        QuickMeal(name: "Greek Yogurt & Berries", calories: 220, proteinGrams: 20, carbGrams: 24, fatGrams: 5),
-        QuickMeal(name: "Eggs & Toast", calories: 380, proteinGrams: 24, carbGrams: 30, fatGrams: 18),
+    public init(id: String = UUID().uuidString, name: String, calories: Int, proteinGrams: Int, carbGrams: Int, fatGrams: Int) {
+        self.id = id
+        self.name = name
+        self.calories = calories
+        self.proteinGrams = proteinGrams
+        self.carbGrams = carbGrams
+        self.fatGrams = fatGrams
+    }
+
+    public static let starterLibrary: [SavedFood] = [
+        SavedFood(name: "Chicken & Rice Bowl", calories: 520, proteinGrams: 45, carbGrams: 55, fatGrams: 12),
+        SavedFood(name: "Protein Shake", calories: 180, proteinGrams: 30, carbGrams: 8, fatGrams: 3),
+        SavedFood(name: "Greek Yogurt & Berries", calories: 220, proteinGrams: 20, carbGrams: 24, fatGrams: 5),
+        SavedFood(name: "Eggs & Toast", calories: 380, proteinGrams: 24, carbGrams: 30, fatGrams: 18),
     ]
+}
+
+public struct MealTypeSummary: Identifiable, Sendable {
+    public var id: MealType { type }
+    public let type: MealType
+    public let entries: [MealEntry]
+    public let calories: Int
+}
+
+public struct DailyMacroSummary: Identifiable, Sendable {
+    public var id: Date { date }
+    public let date: Date
+    public let calories: Int
+    public let proteinGrams: Int
+    public let carbGrams: Int
+    public let fatGrams: Int
+}
+
+public struct MealHistoryAverages: Sendable {
+    public let averageCalories: Int
+    public let averageProteinGrams: Int
+    public let averageCarbGrams: Int
+    public let averageFatGrams: Int
+    public let daysLogged: Int
 }
