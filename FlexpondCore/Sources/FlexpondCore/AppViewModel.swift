@@ -633,6 +633,7 @@ public final class AppViewModel: ObservableObject {
     public func toggleDietAdvanced() { dietAdvancedOpen.toggle() }
 
     public func calculateDiet() {
+        dietProfile = dietProfile.clamped()
         dietScreen = .dashboard
         let profile = dietProfile
         Task { try? await repository.saveDietProfile(profile) }

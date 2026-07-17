@@ -14,15 +14,9 @@ struct DietSetupView: View {
             GenderPicker(vm: vm)
 
             HStack(spacing: 10) {
-                NumberField(label: "Age", value: Binding(
-                    get: { vm.dietProfile.age },
-                    set: { vm.dietProfile.age = DietProfile.clampedAge($0) }
-                ))
+                NumberField(label: "Age", value: $vm.dietProfile.age)
                 HeightField(vm: vm)
-                NumberField(label: "Weight (lb)", value: Binding(
-                    get: { vm.dietProfile.weightPounds },
-                    set: { vm.dietProfile.weightPounds = DietProfile.clampedWeight($0) }
-                ))
+                NumberField(label: "Weight (lb)", value: $vm.dietProfile.weightPounds)
             }
 
             VStack(alignment: .leading, spacing: 9) {
@@ -128,14 +122,8 @@ private struct HeightField: View {
                 .font(.label(10))
                 .foregroundStyle(Theme.textTertiary)
             HStack(spacing: 5) {
-                heightInput(placeholder: "ft", value: Binding(
-                    get: { vm.dietProfile.heightFeet },
-                    set: { vm.dietProfile.heightFeet = DietProfile.clampedHeightFeet($0) }
-                ))
-                heightInput(placeholder: "in", value: Binding(
-                    get: { vm.dietProfile.heightInches },
-                    set: { vm.dietProfile.heightInches = DietProfile.clampedHeightInches($0) }
-                ))
+                heightInput(placeholder: "ft", value: $vm.dietProfile.heightFeet)
+                heightInput(placeholder: "in", value: $vm.dietProfile.heightInches)
             }
         }
         .frame(maxWidth: .infinity)
@@ -230,10 +218,7 @@ private struct AdvancedSettings: View {
                             Text("BODY FAT %")
                                 .font(.label(10))
                                 .foregroundStyle(Theme.textTertiary)
-                            TextField("", value: Binding(
-                                get: { vm.dietProfile.bodyFatPercent },
-                                set: { vm.dietProfile.bodyFatPercent = DietProfile.clampedBodyFat($0) }
-                            ), format: .number)
+                            TextField("", value: $vm.dietProfile.bodyFatPercent, format: .number)
                                 .keyboardType(.numberPad)
                                 .multilineTextAlignment(.center)
                                 .font(.system(size: 15, weight: .bold))

@@ -300,6 +300,36 @@ struct FlexpondCoreTests {
         #expect(DietProfile.clampedBodyFat(90) == 60)
     }
 
+    @Test func dietProfileClampedReturnsFullyClampedCopy() {
+        let wild = DietProfile(age: 2, gender: .male, heightFeet: 1, heightInches: 99, weightPounds: 3, activity: .moderate, goal: .maintain, formula: .katch, bodyFatPercent: 0)
+        let clamped = wild.clamped()
+        #expect(clamped.age == 10)
+        #expect(clamped.heightFeet == 3)
+        #expect(clamped.heightInches == 11)
+        #expect(clamped.weightPounds == 50)
+        #expect(clamped.bodyFatPercent == 3)
+    }
+
+    @Test func macroCalculatorClampsOutOfRangeInputsRatherThanProducingNonsenseTargets() {
+        // A field mid-edit (or just garbage) shouldn't be allowed to reach
+        // the math unclamped — targets(for:) must behave identically to
+        // calling it with the pre-clamped profile.
+        let wild = DietProfile(age: 1, gender: .male, heightFeet: 0, heightInches: 0, weightPounds: 1, activity: .moderate, goal: .maintain, formula: .mifflin, bodyFatPercent: 20)
+        let wildTargets = MacroCalculator.targets(for: wild)
+        let clampedTargets = MacroCalculator.targets(for: wild.clamped())
+        #expect(wildTargets.targetCalories == clampedTargets.targetCalories)
+        #expect(wildTargets.proteinGrams == clampedTargets.proteinGrams)
+    }
+
+    @Test @MainActor func calculateDietClampsAndPersistsTheStoredProfile() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        vm.dietProfile.age = 2 // simulates a mid-edit/garbage value reaching submit
+        vm.calculateDiet()
+        #expect(vm.dietProfile.age == 10)
+        #expect(vm.dietScreen == .dashboard)
+    }
+
     // MARK: - Oura
 
     @Test func ouraReadinessResponseDecodesFixtureJSON() throws {

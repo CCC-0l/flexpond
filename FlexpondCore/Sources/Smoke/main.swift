@@ -102,6 +102,21 @@ check(DietProfile.clampedAge(150) == 100, "age clamps above range")
 check(DietProfile.clampedHeightInches(15) == 11, "height inches clamp to 11")
 check(DietProfile.clampedHeightInches(-3) == 0, "height inches clamp to 0")
 
+do {
+    let wild = DietProfile(age: 2, gender: .male, heightFeet: 1, heightInches: 99, weightPounds: 3, activity: .moderate, goal: .maintain, formula: .katch, bodyFatPercent: 0)
+    let clamped = wild.clamped()
+    check(clamped.age == 10 && clamped.heightFeet == 3 && clamped.heightInches == 11 && clamped.weightPounds == 50 && clamped.bodyFatPercent == 3, "DietProfile.clamped() clamps every field at once")
+}
+do {
+    // A field mid-edit (or just garbage) shouldn't reach the math
+    // unclamped — targets(for:) must match calling it pre-clamped.
+    let wild = DietProfile(age: 1, gender: .male, heightFeet: 0, heightInches: 0, weightPounds: 1, activity: .moderate, goal: .maintain, formula: .mifflin, bodyFatPercent: 20)
+    let wildTargets = MacroCalculator.targets(for: wild)
+    let clampedTargets = MacroCalculator.targets(for: wild.clamped())
+    check(wildTargets.targetCalories == clampedTargets.targetCalories, "MacroCalculator.targets clamps out-of-range calories input defensively")
+    check(wildTargets.proteinGrams == clampedTargets.proteinGrams, "MacroCalculator.targets clamps out-of-range protein input defensively")
+}
+
 // MARK: - Oura
 
 do {
@@ -200,6 +215,11 @@ await MainActor.run {
     vm.selectFrequency(.fourDay)
     vm.startProgram()
     check(vm.plan.count == 2, "a cardio program lives alongside the lifting one")
+
+    vm.dietProfile.age = 2 // simulates a mid-edit/garbage value reaching submit
+    vm.calculateDiet()
+    check(vm.dietProfile.age == 10, "calculateDiet clamps the stored profile")
+    check(vm.dietScreen == .dashboard, "calculateDiet still navigates to the dashboard")
 
     check(vm.readiness?.score == 82, "readiness loads from repository")
     check(vm.physiqueEntries.count == 6, "6 seeded physique entries with real photos")

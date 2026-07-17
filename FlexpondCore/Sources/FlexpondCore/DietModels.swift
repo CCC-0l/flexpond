@@ -132,11 +132,33 @@ public struct DietProfile: Codable, Sendable, Equatable {
     // Mirrors the mockup's `Math.max(lo, Math.min(hi, v))` clamps exactly.
     // Its `|| fallback` suffix is unreachable there too (the max() floor is
     // always > 0), so there's nothing to replicate beyond the plain clamp.
+    //
+    // Deliberately NOT applied on every keystroke in the view layer — a
+    // text field bound through a live-clamping Binding snaps to the floor
+    // the instant a single low digit is typed (e.g. typing "2" toward "25"
+    // instantly becomes "10"), which then re-displays and overwrites
+    // whatever the user was mid-typing, making multi-digit entry
+    // impossible. Fields bind directly to these properties instead, and
+    // `clamped()` is applied only at the boundaries where the values are
+    // actually used: `MacroCalculator.targets(for:)` and
+    // `AppViewModel.calculateDiet()`.
     public static func clampedAge(_ value: Int) -> Int { value.clamped(10...100) }
     public static func clampedHeightFeet(_ value: Int) -> Int { value.clamped(3...7) }
     public static func clampedHeightInches(_ value: Int) -> Int { value.clamped(0...11) }
     public static func clampedWeight(_ value: Int) -> Int { value.clamped(50...600) }
     public static func clampedBodyFat(_ value: Int) -> Int { value.clamped(3...60) }
+
+    /// A copy with every field clamped into its valid range — applied at
+    /// calculation/persistence boundaries, not while the user is typing.
+    public func clamped() -> DietProfile {
+        var copy = self
+        copy.age = Self.clampedAge(age)
+        copy.heightFeet = Self.clampedHeightFeet(heightFeet)
+        copy.heightInches = Self.clampedHeightInches(heightInches)
+        copy.weightPounds = Self.clampedWeight(weightPounds)
+        copy.bodyFatPercent = Self.clampedBodyFat(bodyFatPercent)
+        return copy
+    }
 }
 
 private extension Int {
@@ -168,7 +190,11 @@ public struct MacroTargets: Sendable, Equatable {
 /// regardless of goal), fat holds a 25% floor of total calories for
 /// hormone health, and carbs fill whatever calories remain.
 public enum MacroCalculator {
-    public static func targets(for profile: DietProfile) -> MacroTargets {
+    public static func targets(for rawProfile: DietProfile) -> MacroTargets {
+        // Clamped here (not while the user is typing — see DietProfile's
+        // clamped() doc comment) so a mid-edit or garbage value can never
+        // produce a nonsensical calorie/macro target.
+        let profile = rawProfile.clamped()
         let weightKg = Double(profile.weightPounds) * 0.453592
         let heightCm = Double((profile.heightFeet * 12) + profile.heightInches) * 2.54
 
