@@ -51,7 +51,7 @@ private struct TodayContent: View {
             CalorieSummary(vm: vm)
             MacroBars(vm: vm)
             FoodLibraryRow(vm: vm)
-            MealTypeSections(vm: vm)
+            MealTimeline(vm: vm)
             LogMealForm(vm: vm)
         }
     }
@@ -199,38 +199,27 @@ private struct FoodLibraryCard: View {
     }
 }
 
-private struct MealTypeSections: View {
+/// Today's meals as a single chronological list, timestamped by when each
+/// was logged — no fixed Breakfast/Lunch/Dinner/Snack buckets, since a
+/// 6-small-meals split (common for bodybuilders) doesn't map cleanly onto
+/// 4 slots. Tapping a row opens it for editing.
+private struct MealTimeline: View {
     @ObservedObject var vm: AppViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            ForEach(vm.todaysMealTypeSummaries) { summary in
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(alignment: .lastTextBaseline) {
-                        Text(summary.type.label.uppercased())
-                            .font(.label(11))
-                            .foregroundStyle(Theme.textTertiary)
-                        Spacer()
-                        if summary.calories > 0 {
-                            Text("\(summary.calories) cal")
-                                .font(.label(11))
-                                .foregroundStyle(Theme.textSecondary)
-                        }
-                    }
-                    .padding(.horizontal, 2)
+        VStack(alignment: .leading, spacing: 8) {
+            SectionHeader(title: "Today's meals", count: vm.todaysMealTimeline.count)
 
-                    if summary.entries.isEmpty {
-                        Text("Nothing logged for \(summary.type.label.lowercased()) yet.")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Theme.textFaint)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(14)
-                            .cardBackground(radius: 14)
-                    } else {
-                        ForEach(summary.entries) { meal in
-                            MealRow(meal: meal, onEdit: { vm.beginEditingMeal(meal.id) }, onRemove: { vm.removeMeal(meal.id) })
-                        }
-                    }
+            if vm.todaysMealTimeline.isEmpty {
+                Text("Nothing logged yet today.")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textFaint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+                    .cardBackground(radius: 14)
+            } else {
+                ForEach(vm.todaysMealTimeline) { meal in
+                    MealRow(meal: meal, onEdit: { vm.beginEditingMeal(meal.id) }, onRemove: { vm.removeMeal(meal.id) })
                 }
             }
         }
@@ -246,9 +235,14 @@ private struct MealRow: View {
         HStack(spacing: 12) {
             Button(action: onEdit) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(meal.name)
-                        .font(.system(size: 13.5, weight: .bold))
-                        .foregroundStyle(Theme.textPrimary)
+                    HStack(spacing: 6) {
+                        Text(meal.date.formatted(date: .omitted, time: .shortened))
+                            .font(.label(10))
+                            .foregroundStyle(Theme.textFaint)
+                        Text(meal.name)
+                            .font(.system(size: 13.5, weight: .bold))
+                            .foregroundStyle(Theme.textPrimary)
+                    }
                     Text("\(meal.proteinGrams)g P · \(meal.carbGrams)g C · \(meal.fatGrams)g F")
                         .font(.label(10.5))
                         .foregroundStyle(Theme.textTertiary)
@@ -273,31 +267,6 @@ private struct MealRow: View {
     }
 }
 
-private struct MealTypePicker: View {
-    @ObservedObject var vm: AppViewModel
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(MealType.allCases) { type in
-                let isSelected = vm.newMealType == type
-                Button { vm.newMealType = type } label: {
-                    Text(type.label)
-                        .font(.system(size: 12.5, weight: .bold))
-                        .foregroundStyle(isSelected ? Theme.accentText : Theme.textSecondary)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 9)
-                        .background(isSelected ? Theme.accent : Color.clear)
-                        .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(4)
-        .background(Theme.background)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-    }
-}
-
 private struct LogMealForm: View {
     @ObservedObject var vm: AppViewModel
 
@@ -305,8 +274,6 @@ private struct LogMealForm: View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: vm.editingMealID == nil ? "Log a meal" : "Edit meal", count: nil)
             VStack(spacing: 9) {
-                MealTypePicker(vm: vm)
-
                 TextField("Meal name", text: $vm.newMealName)
                     .font(.system(size: 14))
                     .foregroundStyle(Theme.textPrimary)

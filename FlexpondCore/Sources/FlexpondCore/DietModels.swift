@@ -14,25 +14,6 @@ public enum DietHistoryMode: Sendable {
     case today, trends
 }
 
-public enum MealType: String, CaseIterable, Codable, Identifiable, Sendable {
-    case breakfast, lunch, dinner, snack
-
-    public var id: String { rawValue }
-    public var label: String { rawValue.capitalized }
-
-    /// A time-of-day default, mirroring how MyFitnessPal/Lose It pre-select
-    /// "the meal you're probably logging right now" — the user can always
-    /// override it, including after the fact via editing.
-    public static func current(at date: Date, calendar: Calendar = .current) -> MealType {
-        switch calendar.component(.hour, from: date) {
-        case 0..<11: return .breakfast
-        case 11..<15: return .lunch
-        case 15..<21: return .dinner
-        default: return .snack
-        }
-    }
-}
-
 public enum BMRFormula: String, Codable, Sendable {
     case mifflin, katch
 }
@@ -249,17 +230,15 @@ public enum MacroCalculator {
 public struct MealEntry: Codable, Sendable, Identifiable, Equatable {
     public let id: String
     public let date: Date
-    public let mealType: MealType
     public let name: String
     public let calories: Int
     public let proteinGrams: Int
     public let carbGrams: Int
     public let fatGrams: Int
 
-    public init(id: String = UUID().uuidString, date: Date, mealType: MealType, name: String, calories: Int, proteinGrams: Int, carbGrams: Int, fatGrams: Int) {
+    public init(id: String = UUID().uuidString, date: Date, name: String, calories: Int, proteinGrams: Int, carbGrams: Int, fatGrams: Int) {
         self.id = id
         self.date = date
-        self.mealType = mealType
         self.name = name
         self.calories = calories
         self.proteinGrams = proteinGrams
@@ -295,13 +274,6 @@ public struct SavedFood: Codable, Sendable, Identifiable, Equatable {
         SavedFood(name: "Greek Yogurt & Berries", calories: 220, proteinGrams: 20, carbGrams: 24, fatGrams: 5),
         SavedFood(name: "Eggs & Toast", calories: 380, proteinGrams: 24, carbGrams: 30, fatGrams: 18),
     ]
-}
-
-public struct MealTypeSummary: Identifiable, Sendable {
-    public var id: MealType { type }
-    public let type: MealType
-    public let entries: [MealEntry]
-    public let calories: Int
 }
 
 public struct DailyMacroSummary: Identifiable, Sendable {

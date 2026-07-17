@@ -243,43 +243,35 @@ struct FlexpondCoreTests {
         #expect(vm.dietSummary.consumedCalories == SavedFood.starterLibrary[1].calories)
     }
 
-    // MARK: - MealType / food library / meal editing / history
+    // MARK: - Chronological meal timeline / food library / meal editing / history
 
-    @Test func mealTypeCurrentAtTimeOfDayThresholds() {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
-        func date(hour: Int) -> Date {
-            var comps = DateComponents()
-            comps.year = 2026; comps.month = 7; comps.day = 6; comps.hour = hour
-            comps.timeZone = calendar.timeZone
-            return calendar.date(from: comps)!
-        }
-        #expect(MealType.current(at: date(hour: 0), calendar: calendar) == .breakfast)
-        #expect(MealType.current(at: date(hour: 10), calendar: calendar) == .breakfast)
-        #expect(MealType.current(at: date(hour: 11), calendar: calendar) == .lunch)
-        #expect(MealType.current(at: date(hour: 14), calendar: calendar) == .lunch)
-        #expect(MealType.current(at: date(hour: 15), calendar: calendar) == .dinner)
-        #expect(MealType.current(at: date(hour: 20), calendar: calendar) == .dinner)
-        #expect(MealType.current(at: date(hour: 21), calendar: calendar) == .snack)
-        #expect(MealType.current(at: date(hour: 23), calendar: calendar) == .snack)
-    }
-
-    @Test @MainActor func logSavedFoodUsesGivenOrDefaultMealType() async {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = TimeZone(identifier: "UTC")!
-        var comps = DateComponents()
-        comps.year = 2026; comps.month = 7; comps.day = 6; comps.hour = 8 // breakfast window
-        comps.timeZone = calendar.timeZone
-        let morning = calendar.date(from: comps)!
-
-        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), calendar: calendar, now: { morning })
+    @Test @MainActor func todaysMealTimelineSortsByTimestampNotInsertionOrder() async {
+        var currentDate = Date()
+        let calendar = Calendar.current
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), calendar: calendar, now: { currentDate })
         await vm.load()
 
+        let base = calendar.startOfDay(for: currentDate)
+        // Logged out of order (3pm, 8am, noon) — there's no meal-type bucket
+        // to lean on, so the timeline must sort by actual timestamp.
+        currentDate = calendar.date(byAdding: .hour, value: 15, to: base)!
         vm.logSavedFood(SavedFood.starterLibrary[0])
-        #expect(vm.mealLog.last?.mealType == .breakfast)
+        currentDate = calendar.date(byAdding: .hour, value: 8, to: base)!
+        vm.logSavedFood(SavedFood.starterLibrary[1])
+        currentDate = calendar.date(byAdding: .hour, value: 12, to: base)!
+        vm.logSavedFood(SavedFood.starterLibrary[2])
 
-        vm.logSavedFood(SavedFood.starterLibrary[1], mealType: .dinner)
-        #expect(vm.mealLog.last?.mealType == .dinner)
+        let timeline = vm.todaysMealTimeline
+        #expect(timeline.map(\.name) == [SavedFood.starterLibrary[1].name, SavedFood.starterLibrary[2].name, SavedFood.starterLibrary[0].name])
+    }
+
+    @Test @MainActor func anyNumberOfMealsCanBeLoggedWithNoCategoryLimit() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+
+        // A 6-small-meals-a-day split shouldn't run out of room in a fixed category.
+        for _ in 0..<6 { vm.logSavedFood(SavedFood.starterLibrary[0]) }
+        #expect(vm.todaysMealTimeline.count == 6)
     }
 
     @Test @MainActor func saveMealAddsNewCustomFoodToLibraryAndDedupesByName() async {
@@ -313,7 +305,7 @@ struct FlexpondCoreTests {
     @Test @MainActor func beginEditingMealPopulatesDraftAndSaveUpdatesInPlace() async {
         let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
         await vm.load()
-        vm.logSavedFood(SavedFood.starterLibrary[0], mealType: .breakfast)
+        vm.logSavedFood(SavedFood.starterLibrary[0])
         let entryID = vm.mealLog[0].id
         let libraryCountBefore = vm.savedFoods.count
 
@@ -322,12 +314,10 @@ struct FlexpondCoreTests {
         #expect(vm.editingMealID == entryID)
 
         vm.newMealCalories = "999"
-        vm.newMealType = .dinner
         vm.saveMeal()
 
         #expect(vm.mealLog.count == 1) // updated in place, not appended
         #expect(vm.mealLog[0].calories == 999)
-        #expect(vm.mealLog[0].mealType == .dinner)
         #expect(vm.editingMealID == nil)
         #expect(vm.savedFoods.count == libraryCountBefore) // editing an existing entry doesn't touch the library
     }
@@ -343,22 +333,6 @@ struct FlexpondCoreTests {
         #expect(vm.editingMealID == nil)
         #expect(vm.newMealName == "")
         #expect(vm.mealLog[0].calories == SavedFood.starterLibrary[0].calories) // unchanged
-    }
-
-    @Test @MainActor func todaysMealTypeSummariesAlwaysReturnsFourGroupsInOrder() async {
-        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
-        await vm.load()
-        vm.logSavedFood(SavedFood.starterLibrary[0], mealType: .breakfast)
-        vm.logSavedFood(SavedFood.starterLibrary[1], mealType: .breakfast)
-        vm.logSavedFood(SavedFood.starterLibrary[2], mealType: .dinner)
-
-        let summaries = vm.todaysMealTypeSummaries
-        #expect(summaries.map(\.type) == [.breakfast, .lunch, .dinner, .snack])
-        #expect(summaries[0].entries.count == 2)
-        #expect(summaries[0].calories == SavedFood.starterLibrary[0].calories + SavedFood.starterLibrary[1].calories)
-        #expect(summaries[1].entries.isEmpty)
-        #expect(summaries[2].entries.count == 1)
-        #expect(summaries[3].entries.isEmpty)
     }
 
     @Test @MainActor func mealHistoryZeroFillsGapDaysAndAveragesSkipThem() async {

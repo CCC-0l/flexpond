@@ -125,7 +125,6 @@ public final class AppViewModel: ObservableObject {
     @Published public var newMealProtein: String = ""
     @Published public var newMealCarb: String = ""
     @Published public var newMealFat: String = ""
-    @Published public var newMealType: MealType = .breakfast
     @Published public var editingMealID: String?
 
     public init(
@@ -138,7 +137,6 @@ public final class AppViewModel: ObservableObject {
         self.ouraService = ouraService
         self.calendar = calendar
         self.now = now
-        self.newMealType = MealType.current(at: now(), calendar: calendar)
         Task { await load() }
     }
 
@@ -654,21 +652,17 @@ public final class AppViewModel: ObservableObject {
         !newMealName.trimmingCharacters(in: .whitespaces).isEmpty && (Int(newMealCalories) ?? 0) > 0
     }
 
-    /// Today's log grouped into the 4 `MealType`s, always all 4 (even
-    /// empty) so every section has somewhere to add to — matches how
-    /// MyFitnessPal/Lose It always show all meal sections.
-    public var todaysMealTypeSummaries: [MealTypeSummary] {
-        MealType.allCases.map { type in
-            let entries = todaysMealLog.filter { $0.mealType == type }
-            return MealTypeSummary(type: type, entries: entries, calories: entries.reduce(0) { $0 + $1.calories })
-        }
+    /// Today's log in the order each meal was actually logged — bodybuilders
+    /// eating 6+ small meals a day don't fit neatly into
+    /// breakfast/lunch/dinner/snack, so meals are just timestamped and
+    /// listed chronologically instead of forced into fixed categories.
+    public var todaysMealTimeline: [MealEntry] {
+        todaysMealLog.sorted { $0.date < $1.date }
     }
 
-    /// Logs a saved-food-library item immediately, defaulting to the
-    /// current time-of-day meal type (overridable later via editing).
-    public func logSavedFood(_ food: SavedFood, mealType: MealType? = nil) {
-        let type = mealType ?? MealType.current(at: now(), calendar: calendar)
-        mealLog.append(MealEntry(date: now(), mealType: type, name: food.name, calories: food.calories, proteinGrams: food.proteinGrams, carbGrams: food.carbGrams, fatGrams: food.fatGrams))
+    /// Logs a saved-food-library item immediately, timestamped now.
+    public func logSavedFood(_ food: SavedFood) {
+        mealLog.append(MealEntry(date: now(), name: food.name, calories: food.calories, proteinGrams: food.proteinGrams, carbGrams: food.carbGrams, fatGrams: food.fatGrams))
         persistMealLog()
     }
 
@@ -689,7 +683,6 @@ public final class AppViewModel: ObservableObject {
         newMealProtein = String(entry.proteinGrams)
         newMealCarb = String(entry.carbGrams)
         newMealFat = String(entry.fatGrams)
-        newMealType = entry.mealType
     }
 
     public func cancelEditingMeal() { clearMealDraft() }
@@ -709,9 +702,9 @@ public final class AppViewModel: ObservableObject {
 
         if let editingMealID, let index = mealLog.firstIndex(where: { $0.id == editingMealID }) {
             let existing = mealLog[index]
-            mealLog[index] = MealEntry(id: existing.id, date: existing.date, mealType: newMealType, name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat)
+            mealLog[index] = MealEntry(id: existing.id, date: existing.date, name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat)
         } else {
-            mealLog.append(MealEntry(date: now(), mealType: newMealType, name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat))
+            mealLog.append(MealEntry(date: now(), name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat))
             addToLibraryIfNew(name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat)
         }
 
@@ -732,7 +725,6 @@ public final class AppViewModel: ObservableObject {
         newMealProtein = ""
         newMealCarb = ""
         newMealFat = ""
-        newMealType = MealType.current(at: now(), calendar: calendar)
         editingMealID = nil
     }
 
