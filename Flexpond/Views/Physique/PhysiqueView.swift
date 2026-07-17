@@ -237,19 +237,28 @@ private struct PosePhoto: View {
 
     private var tile: some View {
         ZStack(alignment: .bottomTrailing) {
-            Group {
-                if let fileName, let uiImage = PhysiquePhotoCache.image(named: fileName) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                } else {
-                    Rectangle()
-                        .fill(Theme.background)
-                        .overlay(Image(systemName: onPick != nil ? "plus" : "photo").foregroundStyle(Theme.textFaint))
+            // `Color.clear` owns the fixed-ratio frame; the image is placed
+            // via `.overlay` and only actually gets bounded by the trailing
+            // `.clipShape` on the whole composition. A `.fill`-mode image
+            // sized via its own `.aspectRatio` (the previous approach) can
+            // report a size larger than its tile and bleed past the rounded
+            // corners for any photo whose ratio doesn't already match the
+            // tile's — which the bundled sample photos happened to, but a
+            // real picked photo usually won't.
+            Color.clear
+                .aspectRatio(170.0 / 451.0, contentMode: .fit)
+                .overlay {
+                    if let fileName, let uiImage = PhysiquePhotoCache.image(named: fileName) {
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    } else {
+                        Rectangle()
+                            .fill(Theme.background)
+                            .overlay(Image(systemName: onPick != nil ? "plus" : "photo").foregroundStyle(Theme.textFaint))
+                    }
                 }
-            }
-            .aspectRatio(170.0 / 451.0, contentMode: .fit)
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
             if onPick != nil {
                 Image(systemName: "camera.fill")
