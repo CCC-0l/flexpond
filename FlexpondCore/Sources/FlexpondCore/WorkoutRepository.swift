@@ -163,7 +163,6 @@ public actor LocalWorkoutRepository: WorkoutRepository {
         func photos(_ assetPrefix: String) -> [String: String] {
             [
                 PhysiquePose.front.rawValue: "phys-\(assetPrefix)-front",
-                PhysiquePose.side.rawValue: "phys-\(assetPrefix)-side",
                 PhysiquePose.back.rawValue: "phys-\(assetPrefix)-back",
             ]
         }

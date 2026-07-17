@@ -236,7 +236,7 @@ await MainActor.run {
 
     vm.setPhotoIdentifier("day1-front", for: .front, entryID: "day1")
     check(vm.physiqueEntries.first { $0.id == "day1" }?.photoFileName(for: .front) == "day1-front", "setPhotoIdentifier updates the given pose")
-    check(vm.physiqueEntries.first { $0.id == "day1" }?.photoFileName(for: .side) == "phys-day1-side", "setPhotoIdentifier leaves other poses untouched")
+    check(vm.physiqueEntries.first { $0.id == "day1" }?.photoFileName(for: .back) == "phys-day1-back", "setPhotoIdentifier leaves other poses untouched")
 
     vm.updateEntryWeight("day1", weightPounds: 175)
     check(vm.physiqueEntries.first { $0.id == "day1" }?.weightPounds == 175, "updateEntryWeight edits in place")

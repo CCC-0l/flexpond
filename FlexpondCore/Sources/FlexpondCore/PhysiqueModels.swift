@@ -1,7 +1,7 @@
 import Foundation
 
 public enum PhysiquePose: String, CaseIterable, Codable, Sendable, Identifiable {
-    case front, side, back
+    case front, back
     public var id: String { rawValue }
     public var label: String { rawValue.capitalized }
 }

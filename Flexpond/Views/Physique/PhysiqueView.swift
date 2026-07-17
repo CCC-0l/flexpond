@@ -246,7 +246,7 @@ private struct PosePhoto: View {
             // tile's — which the bundled sample photos happened to, but a
             // real picked photo usually won't.
             Color.clear
-                .aspectRatio(170.0 / 451.0, contentMode: .fit)
+                .aspectRatio(3.0 / 4.0, contentMode: .fit)
                 .overlay {
                     if let fileName, let uiImage = PhysiquePhotoCache.image(named: fileName) {
                         Image(uiImage: uiImage)

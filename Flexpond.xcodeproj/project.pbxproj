@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		01B385446A11035F412C4339 /* phys-6wk-side.png in Resources */ = {isa = PBXBuildFile; fileRef = 29243A7BBCBF7291204B53A0 /* phys-6wk-side.png */; };
 		01C9D5CF6132A69A84DC7AFD /* CircularRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E73F2C64EAF6CD80A0DD24F /* CircularRing.swift */; };
 		04F768FDAA355F4B1D6029D3 /* phys-24wk-front.png in Resources */ = {isa = PBXBuildFile; fileRef = F0AC77CAC12FDF0AD78FBDF9 /* phys-24wk-front.png */; };
 		0BC7084DDA13B4FA29FD27F5 /* IconBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D08FC36CD7305D3D4E36F6BC /* IconBadge.swift */; };
@@ -24,7 +23,6 @@
 		5CB11C94DACE8E33ABF99ED9 /* StatDeltaBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E761058616FBF953AFD8A4DA /* StatDeltaBadge.swift */; };
 		659D96D08E01500F958C4992 /* Sparkline.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31F604F4A6BE8CE3DA36206B /* Sparkline.swift */; };
 		69F92F1280A56B52A5F2EEA7 /* WorkoutTodayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 261DF8EE94FA2EF953F34C92 /* WorkoutTodayView.swift */; };
-		6CBFD1F2BC03BEB601B30211 /* phys-18wk-side.png in Resources */ = {isa = PBXBuildFile; fileRef = 9FD76114028BEBB2AF2CDA55 /* phys-18wk-side.png */; };
 		6F247F446CF17C56C91F4DA4 /* FlexpondTabBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99D06925D29F5FC0EE1462B9 /* FlexpondTabBar.swift */; };
 		7935F2B486A42DA92EB658FE /* phys-18wk-back.png in Resources */ = {isa = PBXBuildFile; fileRef = 637AE893465BC4160A03CCCB /* phys-18wk-back.png */; };
 		828404A56CF609B434744BD6 /* DietContainerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1A629B0F58572B238EEF66B1 /* DietContainerView.swift */; };
@@ -32,12 +30,8 @@
 		95EBBA956F68B5C590D36E81 /* WorkoutBrowseView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C56B4D8D7D9E0D3256FBEE2 /* WorkoutBrowseView.swift */; };
 		9AC8664FEA43A2784827CA8F /* FlexpondHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 148823DE771A3F2039B14CDB /* FlexpondHeader.swift */; };
 		9C99FFADA5FC4892798D6A4A /* SectionHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17F65580D638DA1D96D6D7F8 /* SectionHeader.swift */; };
-		B0387E6D18C1CE1FAE91FE62 /* phys-30wk-side.png in Resources */ = {isa = PBXBuildFile; fileRef = 42BA6C7F8E77F4B874221E14 /* phys-30wk-side.png */; };
 		B1BD49F248665BDCED84AE1F /* Buttons.swift in Sources */ = {isa = PBXBuildFile; fileRef = B167FF07650CC96C4A40690F /* Buttons.swift */; };
 		B5C1937D98901621CD2B2B37 /* phys-18wk-front.png in Resources */ = {isa = PBXBuildFile; fileRef = 3D386BDC154DCCF52ECDEBBC /* phys-18wk-front.png */; };
-		BC1024363605C44AA7D914C7 /* phys-day1-side.png in Resources */ = {isa = PBXBuildFile; fileRef = 7BAD817EAB10FE3904D63E91 /* phys-day1-side.png */; };
-		C15E48521124F6968B9CA8D0 /* phys-24wk-side.png in Resources */ = {isa = PBXBuildFile; fileRef = 94B26CD8DEB07E54222E5177 /* phys-24wk-side.png */; };
-		CE0B262F84212E2CA5FA9E07 /* phys-12wk-side.png in Resources */ = {isa = PBXBuildFile; fileRef = DEDE4E05D09D1B61A874E96D /* phys-12wk-side.png */; };
 		CFECEF742338C2AA0B9884A3 /* PhysiqueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 04C901E2BB7986DA39504544 /* PhysiqueView.swift */; };
 		D3A7E4BAE38F5A108E529911 /* FlexpondApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1A8DB4714945074414968A8 /* FlexpondApp.swift */; };
 		DB3BC0335D1D7924D49C8720 /* PhysiquePhotoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89CD8C0F925B0081F1C5B94D /* PhysiquePhotoCache.swift */; };
@@ -68,25 +62,20 @@
 		1A629B0F58572B238EEF66B1 /* DietContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietContainerView.swift; sourceTree = "<group>"; };
 		1EEBFF14EBEBC44F980E1148 /* WorkoutContainerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutContainerView.swift; sourceTree = "<group>"; };
 		261DF8EE94FA2EF953F34C92 /* WorkoutTodayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutTodayView.swift; sourceTree = "<group>"; };
-		29243A7BBCBF7291204B53A0 /* phys-6wk-side.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-6wk-side.png"; sourceTree = "<group>"; };
 		2E73F2C64EAF6CD80A0DD24F /* CircularRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CircularRing.swift; sourceTree = "<group>"; };
 		31F604F4A6BE8CE3DA36206B /* Sparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sparkline.swift; sourceTree = "<group>"; };
 		3D386BDC154DCCF52ECDEBBC /* phys-18wk-front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-18wk-front.png"; sourceTree = "<group>"; };
 		3FED8D3BEBD73BF5A0721BF9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
-		42BA6C7F8E77F4B874221E14 /* phys-30wk-side.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-30wk-side.png"; sourceTree = "<group>"; };
 		4B4223F6A6840636BAFF63C5 /* phys-12wk-front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-12wk-front.png"; sourceTree = "<group>"; };
 		637AE893465BC4160A03CCCB /* phys-18wk-back.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-18wk-back.png"; sourceTree = "<group>"; };
 		63B849367DFF4DD765A9CD2B /* phys-30wk-back.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-30wk-back.png"; sourceTree = "<group>"; };
 		69C491101BD53D75555EF86C /* FlexpondCore */ = {isa = PBXFileReference; lastKnownFileType = folder; name = FlexpondCore; path = FlexpondCore; sourceTree = SOURCE_ROOT; };
 		6CB2A0665F3C8C737ECAFE35 /* Flexpond.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Flexpond.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		7BAD817EAB10FE3904D63E91 /* phys-day1-side.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-day1-side.png"; sourceTree = "<group>"; };
 		899D54414899F0D7DA481CC5 /* phys-6wk-front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-6wk-front.png"; sourceTree = "<group>"; };
 		89CD8C0F925B0081F1C5B94D /* PhysiquePhotoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PhysiquePhotoCache.swift; sourceTree = "<group>"; };
 		8B846E6031A44D8D327BCC00 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
-		94B26CD8DEB07E54222E5177 /* phys-24wk-side.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-24wk-side.png"; sourceTree = "<group>"; };
 		99D06925D29F5FC0EE1462B9 /* FlexpondTabBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexpondTabBar.swift; sourceTree = "<group>"; };
 		9A0B60A84CDBFA90A4BD70DC /* DietDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietDashboardView.swift; sourceTree = "<group>"; };
-		9FD76114028BEBB2AF2CDA55 /* phys-18wk-side.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-18wk-side.png"; sourceTree = "<group>"; };
 		A9F0E656F89C028AB181D17C /* phys-6wk-back.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-6wk-back.png"; sourceTree = "<group>"; };
 		AFAA45CEDD2927390367C8A0 /* FlowLayout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlowLayout.swift; sourceTree = "<group>"; };
 		B167FF07650CC96C4A40690F /* Buttons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Buttons.swift; sourceTree = "<group>"; };
@@ -97,7 +86,6 @@
 		C39AEF32EA918CB2079375DA /* FlexpondCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexpondCard.swift; sourceTree = "<group>"; };
 		D08FC36CD7305D3D4E36F6BC /* IconBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconBadge.swift; sourceTree = "<group>"; };
 		DC6FF17A937721D822BDE91C /* phys-day1-front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-day1-front.png"; sourceTree = "<group>"; };
-		DEDE4E05D09D1B61A874E96D /* phys-12wk-side.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-12wk-side.png"; sourceTree = "<group>"; };
 		E0DCF42871B2157B2289E38B /* DietSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietSetupView.swift; sourceTree = "<group>"; };
 		E761058616FBF953AFD8A4DA /* StatDeltaBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatDeltaBadge.swift; sourceTree = "<group>"; };
 		F000D4F55968F152BC217EBE /* phys-day1-back.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-day1-back.png"; sourceTree = "<group>"; };
@@ -261,22 +249,16 @@
 			children = (
 				A9F0E656F89C028AB181D17C /* phys-6wk-back.png */,
 				899D54414899F0D7DA481CC5 /* phys-6wk-front.png */,
-				29243A7BBCBF7291204B53A0 /* phys-6wk-side.png */,
 				09B319B46BD84CC5DB622C9A /* phys-12wk-back.png */,
 				4B4223F6A6840636BAFF63C5 /* phys-12wk-front.png */,
-				DEDE4E05D09D1B61A874E96D /* phys-12wk-side.png */,
 				637AE893465BC4160A03CCCB /* phys-18wk-back.png */,
 				3D386BDC154DCCF52ECDEBBC /* phys-18wk-front.png */,
-				9FD76114028BEBB2AF2CDA55 /* phys-18wk-side.png */,
 				BB33789772FF0EDECEC93930 /* phys-24wk-back.png */,
 				F0AC77CAC12FDF0AD78FBDF9 /* phys-24wk-front.png */,
-				94B26CD8DEB07E54222E5177 /* phys-24wk-side.png */,
 				63B849367DFF4DD765A9CD2B /* phys-30wk-back.png */,
 				11811FD7F87EF13A2CB17784 /* phys-30wk-front.png */,
-				42BA6C7F8E77F4B874221E14 /* phys-30wk-side.png */,
 				F000D4F55968F152BC217EBE /* phys-day1-back.png */,
 				DC6FF17A937721D822BDE91C /* phys-day1-front.png */,
-				7BAD817EAB10FE3904D63E91 /* phys-day1-side.png */,
 			);
 			path = PhysiquePhotos;
 			sourceTree = "<group>";
@@ -344,22 +326,16 @@
 			files = (
 				DBFEACE3A7815CB76E07FA6A /* phys-12wk-back.png in Resources */,
 				ED693923DFD270BBF1E373A7 /* phys-12wk-front.png in Resources */,
-				CE0B262F84212E2CA5FA9E07 /* phys-12wk-side.png in Resources */,
 				7935F2B486A42DA92EB658FE /* phys-18wk-back.png in Resources */,
 				B5C1937D98901621CD2B2B37 /* phys-18wk-front.png in Resources */,
-				6CBFD1F2BC03BEB601B30211 /* phys-18wk-side.png in Resources */,
 				14CB4E842F5BE4AD1722A016 /* phys-24wk-back.png in Resources */,
 				04F768FDAA355F4B1D6029D3 /* phys-24wk-front.png in Resources */,
-				C15E48521124F6968B9CA8D0 /* phys-24wk-side.png in Resources */,
 				38FE4BF512098CDF68FFEEB8 /* phys-30wk-back.png in Resources */,
 				F3AAF254139565F88B23F5E8 /* phys-30wk-front.png in Resources */,
-				B0387E6D18C1CE1FAE91FE62 /* phys-30wk-side.png in Resources */,
 				F4E40AB1F0254D2BA7FF5DA7 /* phys-6wk-back.png in Resources */,
 				2363C749F7C5DA7A195DAEC2 /* phys-6wk-front.png in Resources */,
-				01B385446A11035F412C4339 /* phys-6wk-side.png in Resources */,
 				19430621F451498E5C1F4520 /* phys-day1-back.png in Resources */,
 				3BD6F528E47C1847634AC7BC /* phys-day1-front.png in Resources */,
-				BC1024363605C44AA7D914C7 /* phys-day1-side.png in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

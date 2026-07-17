@@ -195,7 +195,7 @@ struct FlexpondCoreTests {
         vm.setPhotoIdentifier("day1-front", for: .front, entryID: "day1")
         let day1 = vm.physiqueEntries.first { $0.id == "day1" }
         #expect(day1?.photoFileName(for: .front) == "day1-front")
-        #expect(day1?.photoFileName(for: .side) == "phys-day1-side") // untouched
+        #expect(day1?.photoFileName(for: .back) == "phys-day1-back") // untouched
     }
 
     @Test @MainActor func updateEntryWeightEditsInPlace() async {
