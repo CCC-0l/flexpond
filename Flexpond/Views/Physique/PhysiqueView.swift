@@ -60,6 +60,7 @@ private struct TimelineSection: View {
 private struct EntryPoseGrid: View {
     var entry: PhysiqueEntry
     @ObservedObject var vm: AppViewModel
+    @State private var showDeleteConfirm = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 13) {
@@ -73,7 +74,7 @@ private struct EntryPoseGrid: View {
                         .foregroundStyle(Theme.accent)
                 }
                 Spacer()
-                Button { vm.deletePhysiqueEntry(entry.id) } label: {
+                Button { showDeleteConfirm = true } label: {
                     Image(systemName: "trash")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.textTertiary)
@@ -96,6 +97,17 @@ private struct EntryPoseGrid: View {
         }
         .padding(15)
         .cardBackground(radius: 18)
+        .confirmationDialog("Delete \(entry.label)?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Delete Entry", role: .destructive) {
+                for identifier in entry.photoFileNames.values {
+                    PhysiquePhotoCache.delete(identifier: identifier)
+                }
+                vm.deletePhysiqueEntry(entry.id)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes its logged weight and photos. This can't be undone.")
+        }
     }
 }
 

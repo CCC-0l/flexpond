@@ -47,6 +47,15 @@ enum PhysiquePhotoCache {
         }
     }
 
+    /// Removes a user-captured photo from disk and the in-memory cache.
+    /// Safe to call with a bundled sample photo's identifier too — there's
+    /// no matching file under Documents, so the removal is just a no-op.
+    static func delete(identifier: String) {
+        cache.removeValue(forKey: identifier)
+        let url = documentsDirectory.appendingPathComponent(identifier).appendingPathExtension("jpg")
+        try? FileManager.default.removeItem(at: url)
+    }
+
     private static func resized(_ image: UIImage, maxDimension: CGFloat) -> UIImage {
         let size = image.size
         let scale = min(1, maxDimension / max(size.width, size.height))

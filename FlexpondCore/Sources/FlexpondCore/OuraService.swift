@@ -125,12 +125,16 @@ public struct OuraContributors: Codable, Sendable, Equatable {
 /// without a network round-trip (the PAT itself lives only in Keychain,
 /// via `OuraService.saveToken`/`loadToken`).
 public struct OuraSnapshot: Codable, Sendable, Equatable {
-    public let score: Int
+    /// Nullable, mirroring `OuraReadinessDay.score` — a ring/account without
+    /// enough history yet can have no computed overall score. Collapsing
+    /// this to `0` before persisting would make "no score data" reload as a
+    /// literal score of zero after the next cold launch.
+    public let score: Int?
     public let contributors: OuraContributors
     public let day: String
     public let syncedAt: Date
 
-    public init(score: Int, contributors: OuraContributors, day: String, syncedAt: Date) {
+    public init(score: Int?, contributors: OuraContributors, day: String, syncedAt: Date) {
         self.score = score
         self.contributors = contributors
         self.day = day
@@ -138,7 +142,7 @@ public struct OuraSnapshot: Codable, Sendable, Equatable {
     }
 
     public init(day: OuraReadinessDay, syncedAt: Date) {
-        self.score = day.score ?? 0
+        self.score = day.score
         self.contributors = day.contributors
         self.day = day.day
         self.syncedAt = syncedAt

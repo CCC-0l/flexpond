@@ -532,7 +532,7 @@ public final class AppViewModel: ObservableObject {
 
     public func addPhysiqueEntry() {
         let entry = PhysiqueEntry(
-            id: "e\(Int(now().timeIntervalSince1970))",
+            id: UUID().uuidString,
             label: "Set \(physiqueEntries.count + 1)",
             date: now(),
             weightPounds: Int(newEntryWeight)

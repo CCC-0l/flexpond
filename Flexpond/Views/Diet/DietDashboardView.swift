@@ -168,6 +168,7 @@ private struct FoodLibraryCard: View {
     var food: SavedFood
     var onLog: () -> Void
     var onDelete: () -> Void
+    @State private var showDeleteConfirm = false
 
     var body: some View {
         Button(action: onLog) {
@@ -187,7 +188,7 @@ private struct FoodLibraryCard: View {
         }
         .buttonStyle(.plain)
         .overlay(alignment: .topTrailing) {
-            Button(action: onDelete) {
+            Button { showDeleteConfirm = true } label: {
                 Image(systemName: "xmark.circle.fill")
                     .font(.system(size: 16))
                     .foregroundStyle(Theme.textTertiary)
@@ -195,6 +196,10 @@ private struct FoodLibraryCard: View {
             }
             .buttonStyle(.plain)
             .offset(x: 6, y: -6)
+        }
+        .confirmationDialog("Remove \"\(food.name)\" from your food library?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Remove", role: .destructive, action: onDelete)
+            Button("Cancel", role: .cancel) {}
         }
     }
 }
@@ -230,6 +235,7 @@ private struct MealRow: View {
     var meal: MealEntry
     var onEdit: () -> Void
     var onRemove: () -> Void
+    @State private var showRemoveConfirm = false
 
     var body: some View {
         HStack(spacing: 12) {
@@ -253,7 +259,7 @@ private struct MealRow: View {
             Text("\(meal.calories) cal")
                 .font(.label(13))
                 .foregroundStyle(Theme.accent)
-            Button(action: onRemove) {
+            Button { showRemoveConfirm = true } label: {
                 Image(systemName: "xmark")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.textTertiary)
@@ -264,6 +270,10 @@ private struct MealRow: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
         .cardBackground(radius: 14)
+        .confirmationDialog("Remove \"\(meal.name)\" from today's log?", isPresented: $showRemoveConfirm, titleVisibility: .visible) {
+            Button("Remove", role: .destructive, action: onRemove)
+            Button("Cancel", role: .cancel) {}
+        }
     }
 }
 

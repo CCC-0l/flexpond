@@ -184,6 +184,20 @@ do {
     check(focus.count == 2, "focus still finds 2 lowest among the 5 present contributors")
 }
 
+do {
+    // A ring/account without enough history yet can have no computed
+    // overall score. Collapsing that to 0 before persisting would make
+    // "no score data" reload as a literal score of zero after the next
+    // cold launch.
+    let noScoreDay = OuraReadinessDay(
+        day: "2026-07-20",
+        score: nil,
+        contributors: OuraContributors(activityBalance: nil, bodyTemperature: nil, hrvBalance: nil, previousDayActivity: nil, previousNight: nil, recoveryIndex: nil, restingHeartRate: nil, sleepBalance: nil)
+    )
+    let snapshot = OuraSnapshot(day: noScoreDay, syncedAt: Date())
+    check(snapshot.score == nil, "OuraSnapshot preserves a nil day score instead of collapsing it to 0")
+}
+
 // MARK: - AppViewModel behavior
 
 // Unlike the Testing-framework tests (which use unique #function-based
@@ -247,6 +261,11 @@ await MainActor.run {
     check(vm.physiqueEntries.count == countBeforeAdd + 1, "addPhysiqueEntry appends one entry")
     check(vm.physiqueEntries.last?.weightPounds == 195, "addPhysiqueEntry uses the draft weight")
     check(vm.newEntryWeight == "", "addPhysiqueEntry clears the draft after use")
+
+    let firstNewID = vm.physiqueEntries.last!.id
+    vm.newEntryWeight = "196"
+    vm.addPhysiqueEntry()
+    check(vm.physiqueEntries.last!.id != firstNewID, "addPhysiqueEntry gives every entry a unique id, even added back-to-back")
 
     let ids = vm.physiqueEntries.map { $0.id }
     vm.toggleCompareEntry(ids[0])

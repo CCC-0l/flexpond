@@ -226,6 +226,15 @@ struct FlexpondCoreTests {
         #expect(vm.newEntryWeight == "")
     }
 
+    @Test @MainActor func addPhysiqueEntryGivesEveryEntryAUniqueID() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        vm.addPhysiqueEntry()
+        let firstID = vm.physiqueEntries.last!.id
+        vm.addPhysiqueEntry()
+        #expect(vm.physiqueEntries.last!.id != firstID)
+    }
+
     @Test @MainActor func todaysMealLogFiltersOutOlderDaysButKeepsFullHistory() async {
         var currentDate = Date()
         let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), now: { currentDate })
@@ -518,6 +527,20 @@ struct FlexpondCoreTests {
         let service = OuraService()
         let focus = service.focusContributors(for: day)
         #expect(focus.count == 2)
+    }
+
+    @Test func ouraSnapshotPreservesNilScoreInsteadOfCollapsingToZero() {
+        // A ring/account without enough history yet can have no computed
+        // overall score. Collapsing that to 0 before persisting would make
+        // "no score data" reload as a literal score of zero after the next
+        // cold launch.
+        let noScoreDay = OuraReadinessDay(
+            day: "2026-07-20",
+            score: nil,
+            contributors: OuraContributors(activityBalance: nil, bodyTemperature: nil, hrvBalance: nil, previousDayActivity: nil, previousNight: nil, recoveryIndex: nil, restingHeartRate: nil, sleepBalance: nil)
+        )
+        let snapshot = OuraSnapshot(day: noScoreDay, syncedAt: Date())
+        #expect(snapshot.score == nil)
     }
 
     @Test func readinessStatusThresholds() {

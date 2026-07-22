@@ -138,6 +138,7 @@ private struct TodayScheduleCard: View {
     var item: TodayScheduleItem
     var onOpen: () -> Void
     var onRemove: () -> Void
+    @State private var showRemoveConfirm = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -177,7 +178,7 @@ private struct TodayScheduleCard: View {
                 ExerciseList(items: item.exercises)
             }
 
-            Button(action: onRemove) {
+            Button { showRemoveConfirm = true } label: {
                 HStack(spacing: 6) {
                     Image(systemName: "trash")
                         .font(.system(size: 12))
@@ -190,6 +191,10 @@ private struct TodayScheduleCard: View {
         }
         .padding(15)
         .cardBackground(radius: 20)
+        .confirmationDialog("Remove \(item.category.rawValue) from today's plan?", isPresented: $showRemoveConfirm, titleVisibility: .visible) {
+            Button("Remove", role: .destructive, action: onRemove)
+            Button("Cancel", role: .cancel) {}
+        }
     }
 }
 
@@ -197,6 +202,7 @@ private struct WalkRow: View {
     var goal: Int
     var onOpen: () -> Void
     var onRemove: () -> Void
+    @State private var showRemoveConfirm = false
 
     var body: some View {
         HStack(spacing: 8) {
@@ -219,7 +225,7 @@ private struct WalkRow: View {
             }
             .buttonStyle(.plain)
 
-            Button(action: onRemove) {
+            Button { showRemoveConfirm = true } label: {
                 Image(systemName: "trash")
                     .font(.system(size: 15))
                     .foregroundStyle(Theme.textTertiary)
@@ -227,6 +233,10 @@ private struct WalkRow: View {
                     .cardBackground(radius: 16)
             }
             .buttonStyle(.plain)
+        }
+        .confirmationDialog("Remove your Walk goal?", isPresented: $showRemoveConfirm, titleVisibility: .visible) {
+            Button("Remove", role: .destructive, action: onRemove)
+            Button("Cancel", role: .cancel) {}
         }
     }
 }
