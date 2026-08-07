@@ -16,6 +16,7 @@
 		2432747521E1E5BF6E55EC2D /* ExerciseScheduleList.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7E7C8B537BAE5F8FD7E974B /* ExerciseScheduleList.swift */; };
 		24D5F18BD17D8758DC1F166F /* DietTrendsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C7E917593CF07C18270B5305 /* DietTrendsView.swift */; };
 		2C46AA478EF74E07BB765035 /* ReadinessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF2FDFB958FE6517D7990702 /* ReadinessView.swift */; };
+		2F85D7F1C8031B4AF1401590 /* DietQuickLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3F00786B2D416CB84912297 /* DietQuickLog.swift */; };
 		38FE4BF512098CDF68FFEEB8 /* phys-30wk-back.png in Resources */ = {isa = PBXBuildFile; fileRef = 63B849367DFF4DD765A9CD2B /* phys-30wk-back.png */; };
 		3BD6F528E47C1847634AC7BC /* phys-day1-front.png in Resources */ = {isa = PBXBuildFile; fileRef = DC6FF17A937721D822BDE91C /* phys-day1-front.png */; };
 		3DE0BF1012B0C1117E559A2F /* TabIconShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A9D1A7821404BB924E18EC /* TabIconShape.swift */; };
@@ -85,6 +86,7 @@
 		BB33789772FF0EDECEC93930 /* phys-24wk-back.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-24wk-back.png"; sourceTree = "<group>"; };
 		BF2FDFB958FE6517D7990702 /* ReadinessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessView.swift; sourceTree = "<group>"; };
 		C39AEF32EA918CB2079375DA /* FlexpondCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FlexpondCard.swift; sourceTree = "<group>"; };
+		C3F00786B2D416CB84912297 /* DietQuickLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietQuickLog.swift; sourceTree = "<group>"; };
 		C7E917593CF07C18270B5305 /* DietTrendsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DietTrendsView.swift; sourceTree = "<group>"; };
 		D08FC36CD7305D3D4E36F6BC /* IconBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconBadge.swift; sourceTree = "<group>"; };
 		DC6FF17A937721D822BDE91C /* phys-day1-front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-day1-front.png"; sourceTree = "<group>"; };
@@ -224,6 +226,7 @@
 			children = (
 				B167FF07650CC96C4A40690F /* Buttons.swift */,
 				2E73F2C64EAF6CD80A0DD24F /* CircularRing.swift */,
+				C3F00786B2D416CB84912297 /* DietQuickLog.swift */,
 				B7E7C8B537BAE5F8FD7E974B /* ExerciseScheduleList.swift */,
 				C39AEF32EA918CB2079375DA /* FlexpondCard.swift */,
 				148823DE771A3F2039B14CDB /* FlexpondHeader.swift */,
@@ -353,6 +356,7 @@
 				01C9D5CF6132A69A84DC7AFD /* CircularRing.swift in Sources */,
 				828404A56CF609B434744BD6 /* DietContainerView.swift in Sources */,
 				ED850E55A005A3ED251114CC /* DietDashboardView.swift in Sources */,
+				2F85D7F1C8031B4AF1401590 /* DietQuickLog.swift in Sources */,
 				F4CB3A3F81B9D326B8854D72 /* DietSetupView.swift in Sources */,
 				24D5F18BD17D8758DC1F166F /* DietTrendsView.swift in Sources */,
 				2432747521E1E5BF6E55EC2D /* ExerciseScheduleList.swift in Sources */,

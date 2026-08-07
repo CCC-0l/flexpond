@@ -30,12 +30,84 @@ struct HomeView: View {
                 TodayPlanSection(vm: vm)
             }
 
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                QuickLinkCard(icon: .diet, title: "Diet") { vm.selectTab(.diet) }
-                QuickLinkCard(icon: .physique, title: "Physique") { vm.selectTab(.physique) }
-            }
+            DietSection(vm: vm)
+
+            QuickLinkCard(icon: .physique, title: "Physique") { vm.selectTab(.physique) }
         }
         .padding(.top, 6)
+    }
+}
+
+/// Today's diet macros + quick-log, right on Home — logging a food here
+/// updates `vm.dietSummary` immediately since it's a computed property
+/// over `vm.mealLog`, so the bars below reflect it without any extra
+/// plumbing. Gated on `vm.dietScreen` so unconfirmed default macro
+/// targets (before the user has ever run the calculator) aren't shown as
+/// if they were real — mirrors `isPlanEmpty`'s gating for workouts above.
+private struct DietSection: View {
+    @ObservedObject var vm: AppViewModel
+
+    var body: some View {
+        if vm.dietScreen == .setup {
+            DietSetupPromptCard(vm: vm)
+        } else {
+            DietSummaryCard(vm: vm)
+        }
+    }
+}
+
+private struct DietSetupPromptCard: View {
+    @ObservedObject var vm: AppViewModel
+
+    var body: some View {
+        Button { vm.selectTab(.diet) } label: {
+            HStack(spacing: 13) {
+                TabIconShape(kind: .diet, color: Theme.accent)
+                    .frame(width: 24, height: 24)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Set up your diet")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Theme.textPrimary)
+                    Text("Calculate your daily calorie and macro targets.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                Spacer(minLength: 8)
+                RowChevron()
+            }
+            .padding(16)
+            .cardBackground()
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct DietSummaryCard: View {
+    @ObservedObject var vm: AppViewModel
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Button { vm.selectTab(.diet) } label: {
+                HStack(spacing: 13) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("DIET TODAY")
+                            .font(.label(10))
+                            .foregroundStyle(Theme.textTertiary)
+                        Text("\(vm.dietSummary.consumedCalories) of \(vm.dietSummary.targetCalories) cal · \(vm.dietSummary.remainingCalories) left")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundStyle(Theme.textPrimary)
+                    }
+                    Spacer(minLength: 8)
+                    RowChevron()
+                }
+            }
+            .buttonStyle(.plain)
+
+            MacroBars(vm: vm)
+            FoodLibraryRow(vm: vm)
+        }
+        .padding(15)
+        .cardBackground(radius: 20)
     }
 }
 
