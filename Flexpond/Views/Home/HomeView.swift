@@ -38,12 +38,17 @@ struct HomeView: View {
     }
 }
 
-/// Today's diet macros + quick-log, right on Home — logging a food here
-/// updates `vm.dietSummary` immediately since it's a computed property
-/// over `vm.mealLog`, so the bars below reflect it without any extra
-/// plumbing. Gated on `vm.dietScreen` so unconfirmed default macro
-/// targets (before the user has ever run the calculator) aren't shown as
-/// if they were real — mirrors `isPlanEmpty`'s gating for workouts above.
+/// Full diet tracking, right on Home — the same components the Diet tab
+/// itself uses (`MacroBars`, `FoodLibraryRow`, `MealTimeline`,
+/// `LogMealForm`, all in `Components/DietQuickLog.swift`), so logging a
+/// custom meal, re-logging from the library, and editing/deleting an
+/// already-logged meal never require leaving Home. `dietSummary` is a
+/// computed property over `vm.mealLog`, so every action here updates the
+/// bars immediately with no extra plumbing. Gated on `vm.dietScreen` so
+/// unconfirmed default macro targets (before the user has ever run the
+/// calculator) aren't shown as if they were real — mirrors
+/// `isPlanEmpty`'s gating for workouts above. Only the Trends view stays
+/// Diet-tab-only, reached via the header's tap-through.
 private struct DietSection: View {
     @ObservedObject var vm: AppViewModel
 
@@ -51,7 +56,13 @@ private struct DietSection: View {
         if vm.dietScreen == .setup {
             DietSetupPromptCard(vm: vm)
         } else {
-            DietSummaryCard(vm: vm)
+            VStack(alignment: .leading, spacing: 22) {
+                DietSummaryHeader(vm: vm)
+                MacroBars(vm: vm)
+                FoodLibraryRow(vm: vm)
+                MealTimeline(vm: vm)
+                LogMealForm(vm: vm)
+            }
         }
     }
 }
@@ -82,32 +93,32 @@ private struct DietSetupPromptCard: View {
     }
 }
 
-private struct DietSummaryCard: View {
+/// Tappable eyebrow header for the Diet section — routes to the Diet tab
+/// for the one thing that stays there: Trends.
+private struct DietSummaryHeader: View {
     @ObservedObject var vm: AppViewModel
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Button { vm.selectTab(.diet) } label: {
-                HStack(spacing: 13) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text("DIET TODAY")
-                            .font(.label(10))
-                            .foregroundStyle(Theme.textTertiary)
-                        Text("\(vm.dietSummary.consumedCalories) of \(vm.dietSummary.targetCalories) cal · \(vm.dietSummary.remainingCalories) left")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Theme.textPrimary)
-                    }
-                    Spacer(minLength: 8)
-                    RowChevron()
+        Button { vm.selectTab(.diet) } label: {
+            HStack(spacing: 13) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("DIET TODAY")
+                        .font(.label(10))
+                        .foregroundStyle(Theme.textTertiary)
+                    Text("\(vm.dietSummary.consumedCalories) of \(vm.dietSummary.targetCalories) cal · \(vm.dietSummary.remainingCalories) left")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Theme.textPrimary)
                 }
+                Spacer(minLength: 8)
+                Text("Trends")
+                    .font(.label(10.5, weight: .bold))
+                    .foregroundStyle(Theme.accent)
+                RowChevron()
             }
-            .buttonStyle(.plain)
-
-            MacroBars(vm: vm)
-            FoodLibraryRow(vm: vm)
+            .padding(16)
+            .cardBackground()
         }
-        .padding(15)
-        .cardBackground(radius: 20)
+        .buttonStyle(.plain)
     }
 }
 
