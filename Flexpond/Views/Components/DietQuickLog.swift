@@ -5,26 +5,31 @@ import FlexpondCore
 /// — same rendering and actions everywhere, matching the
 /// `ExerciseScheduleList` precedent for sharing between Home and Workout.
 
+/// One compact card holding all 3 macro rows — previously 3 separate
+/// bordered cards, which read as 3 distinct items instead of one
+/// glanceable summary.
 struct MacroBars: View {
     @ObservedObject var vm: AppViewModel
 
     var body: some View {
-        VStack(spacing: 12) {
-            macroBar(title: "Protein", consumed: vm.dietSummary.proteinConsumed, target: vm.dietSummary.proteinTarget, progress: vm.dietSummary.proteinProgress, color: Theme.accent)
-            macroBar(title: "Carbs", consumed: vm.dietSummary.carbConsumed, target: vm.dietSummary.carbTarget, progress: vm.dietSummary.carbProgress, color: Theme.good)
-            macroBar(title: "Fat", consumed: vm.dietSummary.fatConsumed, target: vm.dietSummary.fatTarget, progress: vm.dietSummary.fatProgress, color: Theme.warning)
+        VStack(spacing: 15) {
+            macroRow(title: "Protein", consumed: vm.dietSummary.proteinConsumed, target: vm.dietSummary.proteinTarget, progress: vm.dietSummary.proteinProgress, color: Theme.accent)
+            macroRow(title: "Carbs", consumed: vm.dietSummary.carbConsumed, target: vm.dietSummary.carbTarget, progress: vm.dietSummary.carbProgress, color: Theme.good)
+            macroRow(title: "Fat", consumed: vm.dietSummary.fatConsumed, target: vm.dietSummary.fatTarget, progress: vm.dietSummary.fatProgress, color: Theme.warning)
         }
+        .padding(14)
+        .cardBackground(radius: 16)
     }
 
-    private func macroBar(title: String, consumed: Int, target: Int, progress: Double, color: Color) -> some View {
-        VStack(spacing: 9) {
+    private func macroRow(title: String, consumed: Int, target: Int, progress: Double, color: Color) -> some View {
+        VStack(spacing: 7) {
             HStack {
                 Text(title)
-                    .font(.system(size: 13.5, weight: .bold))
+                    .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Theme.textPrimary)
                 Spacer()
                 Text("\(consumed)g / \(target)g")
-                    .font(.label(11.5))
+                    .font(.label(11))
                     .foregroundStyle(Theme.textSecondary)
             }
             GeometryReader { geo in
@@ -33,43 +38,26 @@ struct MacroBars: View {
                         Capsule().fill(color).frame(width: geo.size.width * progress)
                     }
             }
-            .frame(height: 7)
+            .frame(height: 6)
         }
-        .padding(13)
-        .cardBackground(radius: 14)
     }
 }
 
 struct FoodLibraryRow: View {
     @ObservedObject var vm: AppViewModel
-    @State private var searchText = ""
-
-    private var filteredFoods: [SavedFood] {
-        let query = searchText.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return vm.savedFoods }
-        return vm.savedFoods.filter { $0.name.localizedCaseInsensitiveContains(query) }
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             SectionHeader(title: "Your food library", count: nil)
 
-            TextField("Search your foods", text: $searchText)
-                .font(.system(size: 13))
-                .foregroundStyle(Theme.textPrimary)
-                .padding(10)
-                .background(Theme.card)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.hairline, lineWidth: 1))
-
-            if filteredFoods.isEmpty {
-                Text(vm.savedFoods.isEmpty ? "Log a custom meal on the Diet tab to start building your library." : "No foods match \"\(searchText)\".")
+            if vm.savedFoods.isEmpty {
+                Text("Log a custom meal below to start building your library.")
                     .font(.system(size: 12.5))
                     .foregroundStyle(Theme.textTertiary)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
-                        ForEach(filteredFoods) { food in
+                        ForEach(vm.savedFoods) { food in
                             FoodLibraryCard(food: food, onLog: { vm.logSavedFood(food) }, onDelete: { vm.deleteSavedFood(food.id) })
                         }
                     }
