@@ -8,6 +8,7 @@ struct PhysiqueView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             SegmentedControl(vm: vm)
+            HeightRow(vm: vm)
 
             switch vm.physiqueViewMode {
             case .timeline: TimelineSection(vm: vm)
@@ -15,6 +16,53 @@ struct PhysiqueView: View {
             }
         }
         .padding(.top, 6)
+    }
+}
+
+/// Height used only to compute BMI on this page — logged separately from
+/// Diet's own height (which drives calorie/macro math instead). Surfaced
+/// here, editable, so it's clear where a Physique BMI actually comes from.
+private struct HeightRow: View {
+    @ObservedObject var vm: AppViewModel
+    @State private var isEditing = false
+    @State private var feetDraft = ""
+    @State private var inchesDraft = ""
+
+    var body: some View {
+        Button {
+            feetDraft = String(vm.physiqueHeightFeet)
+            inchesDraft = String(vm.physiqueHeightInches)
+            isEditing = true
+        } label: {
+            HStack(spacing: 10) {
+                Text("HEIGHT FOR BMI")
+                    .font(.label(10.5))
+                    .foregroundStyle(Theme.textTertiary)
+                Spacer()
+                Text("\(vm.physiqueHeightFeet)′\(vm.physiqueHeightInches)″")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Theme.textPrimary)
+                Image(systemName: "pencil")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Theme.accent)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .cardBackground(radius: 13)
+        }
+        .buttonStyle(.plain)
+        .alert("Height for BMI", isPresented: $isEditing) {
+            TextField("Feet", text: $feetDraft)
+                .keyboardType(.numberPad)
+            TextField("Inches", text: $inchesDraft)
+                .keyboardType(.numberPad)
+            Button("Save") {
+                vm.setPhysiqueHeight(feet: Int(feetDraft) ?? vm.physiqueHeightFeet, inches: Int(inchesDraft) ?? vm.physiqueHeightInches)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Used only to calculate BMI on this page — separate from your height in Diet.")
+        }
     }
 }
 

@@ -112,6 +112,11 @@ public final class AppViewModel: ObservableObject {
     @Published public var physiqueViewMode: PhysiqueViewMode = .timeline
     @Published public private(set) var selectedEntryIDs: [String] = []
     @Published public var newEntryWeight: String = ""
+    /// Logged separately from Diet's height (which drives calorie/macro
+    /// math) — used only for BMI on this page. Seeded once from Diet's
+    /// height on first load if never set here, then fully independent.
+    @Published public private(set) var physiqueHeightFeet: Int = 5
+    @Published public private(set) var physiqueHeightInches: Int = 10
 
     // Diet
     @Published public var dietProfile: DietProfile = DietProfile()
@@ -144,6 +149,7 @@ public final class AppViewModel: ObservableObject {
         async let planTask = repository.fetchPlan()
         async let readinessTask = repository.fetchReadiness()
         async let physiqueTask = repository.fetchPhysiqueEntries()
+        async let physiqueHeightTask = repository.fetchPhysiqueHeight()
         async let dietProfileTask = repository.fetchDietProfile()
         async let mealLogTask = repository.fetchMealLog()
         async let savedFoodsTask = repository.fetchSavedFoods()
@@ -156,6 +162,16 @@ public final class AppViewModel: ObservableObject {
         if let profile = try? await dietProfileTask {
             self.dietProfile = profile
             self.dietScreen = .dashboard
+        }
+        if let height = try? await physiqueHeightTask {
+            physiqueHeightFeet = height.feet
+            physiqueHeightInches = height.inches
+        } else {
+            // Never logged separately yet — seed from whatever Diet height
+            // is already on file so BMI doesn't go blank for existing
+            // users; editable independently on Physique from here on.
+            physiqueHeightFeet = dietProfile.heightFeet
+            physiqueHeightInches = dietProfile.heightInches
         }
         if let log = try? await mealLogTask { self.mealLog = log }
         if let foods = try? await savedFoodsTask { self.savedFoods = foods }
@@ -571,12 +587,20 @@ public final class AppViewModel: ObservableObject {
         Task { try? await repository.savePhysiqueEntries(snapshot) }
     }
 
-    /// BMI for a given entry, using the height already captured in
-    /// `dietProfile` — nil if the entry has no logged weight or no height
-    /// has been set up yet (Diet profile untouched).
+    /// Updates the height used for BMI on this page — independent of
+    /// Diet's own height field.
+    public func setPhysiqueHeight(feet: Int, inches: Int) {
+        physiqueHeightFeet = feet
+        physiqueHeightInches = inches
+        let height = PhysiqueHeight(feet: feet, inches: inches)
+        Task { try? await repository.savePhysiqueHeight(height) }
+    }
+
+    /// BMI for a given entry, using the height logged on this page — nil if
+    /// the entry has no logged weight.
     public func bmi(for entry: PhysiqueEntry) -> Double? {
         guard let weight = entry.weightPounds else { return nil }
-        return PhysiqueStats.bmi(weightPounds: weight, heightFeet: dietProfile.heightFeet, heightInches: dietProfile.heightInches)
+        return PhysiqueStats.bmi(weightPounds: weight, heightFeet: physiqueHeightFeet, heightInches: physiqueHeightInches)
     }
 
     /// Weight change vs. the chronologically previous entry (by `date`,

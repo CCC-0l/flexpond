@@ -46,6 +46,21 @@ public struct PhysiqueEntry: Codable, Sendable, Identifiable, Equatable {
     }
 }
 
+/// Height used for BMI on the Physique page — logged separately from
+/// Diet's own height field (which drives calorie/macro math, not BMI).
+/// The two used to be silently shared via `DietProfile`, which meant
+/// Physique's BMI depended on a value the user set on a different tab
+/// without realizing it.
+public struct PhysiqueHeight: Codable, Sendable, Equatable {
+    public var feet: Int
+    public var inches: Int
+
+    public init(feet: Int, inches: Int) {
+        self.feet = feet
+        self.inches = inches
+    }
+}
+
 /// Pure body-composition math, kept alongside `MacroCalculator` in spirit —
 /// deterministic, easy to unit test, no view/state coupling.
 public enum PhysiqueStats {

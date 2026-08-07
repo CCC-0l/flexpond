@@ -243,10 +243,15 @@ await MainActor.run {
     // Physique stats
     let day1 = vm.physiqueEntries.first { $0.id == "day1" }!
     let wk6 = vm.physiqueEntries.first { $0.id == "wk6" }!
-    check(abs((vm.bmi(for: day1) ?? 0) - 25.54) < 0.05, "bmi(for:) uses DietProfile height (default 5'10\")")
+    check(abs((vm.bmi(for: day1) ?? 0) - 25.54) < 0.05, "bmi(for:) seeds physique height from DietProfile's default 5'10\" on first load")
     check(vm.weightDelta(for: day1) == nil, "first chronological entry has no delta to compare against")
     check(vm.weightDelta(for: wk6) == 2, "weightDelta vs chronologically previous entry (180 - 178)")
     check((vm.bmiDelta(for: wk6) ?? 0) > 0, "gained weight -> bmiDelta positive")
+
+    vm.setPhysiqueHeight(feet: 6, inches: 0)
+    check(vm.physiqueHeightFeet == 6 && vm.physiqueHeightInches == 0, "setPhysiqueHeight updates independently of DietProfile")
+    check(vm.dietProfile.heightFeet == 5 && vm.dietProfile.heightInches == 10, "setPhysiqueHeight leaves DietProfile's own height untouched")
+    check(abs((vm.bmi(for: day1) ?? 0) - 24.14) < 0.05, "bmi(for:) reflects the independently-set physique height, not DietProfile's")
 
     vm.setPhotoIdentifier("day1-front", for: .front, entryID: "day1")
     check(vm.physiqueEntries.first { $0.id == "day1" }?.photoFileName(for: .front) == "day1-front", "setPhotoIdentifier updates the given pose")

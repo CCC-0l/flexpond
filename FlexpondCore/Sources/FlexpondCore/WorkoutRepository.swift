@@ -12,6 +12,8 @@ public protocol WorkoutRepository: Sendable {
     func fetchReadiness() async throws -> ReadinessData
     func fetchPhysiqueEntries() async throws -> [PhysiqueEntry]
     func savePhysiqueEntries(_ entries: [PhysiqueEntry]) async throws
+    func fetchPhysiqueHeight() async throws -> PhysiqueHeight?
+    func savePhysiqueHeight(_ height: PhysiqueHeight) async throws
     func fetchDietProfile() async throws -> DietProfile?
     func saveDietProfile(_ profile: DietProfile) async throws
     func fetchMealLog() async throws -> [MealEntry]
@@ -35,6 +37,7 @@ public actor LocalWorkoutRepository: WorkoutRepository {
     private enum Key {
         static let plan = "flexpond.plan"
         static let physiqueEntries = "flexpond.physiqueEntries"
+        static let physiqueHeight = "flexpond.physiqueHeight"
         static let dietProfile = "flexpond.dietProfile"
         static let mealLog = "flexpond.mealLog"
         static let savedFoods = "flexpond.savedFoods"
@@ -97,6 +100,14 @@ public actor LocalWorkoutRepository: WorkoutRepository {
 
     public func savePhysiqueEntries(_ entries: [PhysiqueEntry]) async throws {
         save(entries, forKey: Key.physiqueEntries)
+    }
+
+    public func fetchPhysiqueHeight() async throws -> PhysiqueHeight? {
+        load(PhysiqueHeight.self, forKey: Key.physiqueHeight)
+    }
+
+    public func savePhysiqueHeight(_ height: PhysiqueHeight) async throws {
+        save(height, forKey: Key.physiqueHeight)
     }
 
     // MARK: Diet

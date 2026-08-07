@@ -170,12 +170,26 @@ struct FlexpondCoreTests {
         #expect(PhysiqueStats.bmi(weightPounds: 180, heightFeet: 0, heightInches: 0) == nil)
     }
 
-    @Test @MainActor func physiqueBMIUsesDietProfileHeight() async throws {
+    @Test @MainActor func physiqueBMISeedsHeightFromDietProfileOnFirstLoad() async throws {
         let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
         await vm.load()
         let day1 = try #require(vm.physiqueEntries.first { $0.id == "day1" })
         let bmi = try #require(vm.bmi(for: day1))
-        #expect(abs(bmi - 25.54) < 0.05)
+        #expect(abs(bmi - 25.54) < 0.05) // DietProfile's default height, 5'10"
+    }
+
+    @Test @MainActor func setPhysiqueHeightIsIndependentOfDietProfile() async throws {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        let day1 = try #require(vm.physiqueEntries.first { $0.id == "day1" }) // 178 lb, seeded
+
+        vm.setPhysiqueHeight(feet: 6, inches: 0)
+        #expect(vm.physiqueHeightFeet == 6)
+        #expect(vm.physiqueHeightInches == 0)
+        #expect(vm.dietProfile.heightFeet == 5 && vm.dietProfile.heightInches == 10) // untouched
+
+        let bmi = try #require(vm.bmi(for: day1))
+        #expect(abs(bmi - 24.14) < 0.05) // reflects the new physique height, not DietProfile's
     }
 
     @Test @MainActor func physiqueDeltasComputeVsChronologicallyPreviousEntry() async throws {
