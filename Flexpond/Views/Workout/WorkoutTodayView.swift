@@ -1,9 +1,13 @@
 import SwiftUI
 import FlexpondCore
 
-/// Read-only "here's what's scheduled" view — the redesign dropped
-/// per-exercise completion tracking entirely (no checkboxes, no "Complete
-/// session", no progress bars).
+/// "Here's what's scheduled" view. When browsing today specifically, the
+/// exercise list becomes an interactive checklist (checkboxes, progress,
+/// "Mark complete") backed by `AppViewModel.completedExerciseIDs` — the
+/// same state Home's today-schedule cards read/write, so checking
+/// something off in either place stays in sync. Other days (via
+/// `DayStrip`) stay read-only, since there's no "complete a past/future
+/// day" concept.
 struct WorkoutTodayView: View {
     @ObservedObject var vm: AppViewModel
 
@@ -41,7 +45,16 @@ struct WorkoutTodayView: View {
             }
 
             if let day = vm.selectedTrainingDay {
-                ExerciseList(items: day.items)
+                if vm.effectiveWeekday == vm.todayWeekday {
+                    ExerciseList(
+                        items: day.items,
+                        completedIDs: vm.completedExerciseIDs,
+                        onToggle: { vm.toggleExerciseComplete($0) },
+                        onToggleAll: { vm.toggleSessionComplete(day.items) }
+                    )
+                } else {
+                    ExerciseList(items: day.items)
+                }
             } else {
                 RestDayCard()
             }

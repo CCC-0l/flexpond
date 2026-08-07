@@ -57,3 +57,18 @@ public struct ProgramVariant: Codable, Sendable, Identifiable, Equatable {
 
     private enum CodingKeys: String, CodingKey { case name, description, days }
 }
+
+/// A same-day checklist of completed exercises — not a historical log.
+/// `date` marks which day `exerciseIDs` belongs to; `AppViewModel` treats
+/// it as stale (and resets) once `date` isn't today anymore, since
+/// completion is meant to reset each day rather than track every past/
+/// future occurrence of a repeating weekly program.
+public struct WorkoutCompletion: Codable, Sendable, Equatable {
+    public let date: Date
+    public let exerciseIDs: [String]
+
+    public init(date: Date, exerciseIDs: [String]) {
+        self.date = date
+        self.exerciseIDs = exerciseIDs
+    }
+}

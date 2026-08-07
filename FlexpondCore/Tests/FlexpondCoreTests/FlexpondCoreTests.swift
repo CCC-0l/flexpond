@@ -136,6 +136,44 @@ struct FlexpondCoreTests {
         #expect(vm.walkPlanItem == nil)
     }
 
+    @Test @MainActor func workoutCompletionTogglesAndResetsDaily() async throws {
+        var comps = DateComponents()
+        comps.year = 2026; comps.month = 7; comps.day = 6 // Monday, Jul 6 2026 — a training day
+        let calendar = Calendar(identifier: .gregorian)
+        var currentDate = calendar.date(from: comps)!
+
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), calendar: calendar, now: { currentDate })
+        await vm.load()
+
+        vm.openCategory(.program(.bodybuilding))
+        vm.selectFrequency(.fourDay)
+        vm.selectVariant(0)
+        vm.startProgram()
+
+        let exercises = try #require(vm.todaysLiftingSchedule?.exercises)
+        #expect(exercises.count >= 2)
+        #expect(vm.completedExerciseIDs.isEmpty)
+
+        let first = exercises[0]
+        vm.toggleExerciseComplete(first)
+        #expect(vm.completedExerciseIDs.contains(first.id))
+        vm.toggleExerciseComplete(first)
+        #expect(!vm.completedExerciseIDs.contains(first.id))
+
+        vm.toggleSessionComplete(exercises)
+        #expect(exercises.allSatisfy { vm.completedExerciseIDs.contains($0.id) })
+        vm.toggleSessionComplete(exercises) // already fully complete -> un-marks all
+        #expect(exercises.allSatisfy { !vm.completedExerciseIDs.contains($0.id) })
+
+        // Daily reset: rolling into the next day clears completion.
+        vm.toggleExerciseComplete(first)
+        #expect(vm.completedExerciseIDs.contains(first.id))
+        currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+        vm.toggleExerciseComplete(exercises[1]) // any completion action re-checks staleness first
+        #expect(!vm.completedExerciseIDs.contains(first.id))
+        #expect(vm.completedExerciseIDs.contains(exercises[1].id))
+    }
+
     @Test @MainActor func readinessAndPhysiqueLoadFromRepository() async {
         let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
         await vm.load()

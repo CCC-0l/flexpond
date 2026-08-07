@@ -89,6 +89,13 @@ public final class AppViewModel: ObservableObject {
     // Plan
     @Published public private(set) var plan: [PlanItem] = []
 
+    /// Today's checked-off exercises — a same-day checklist, not a
+    /// historical log. Resets whenever the calendar day rolls over (see
+    /// `resetCompletionIfStale()`), rather than tracking every past/future
+    /// occurrence of a repeating weekly program.
+    @Published public private(set) var completedExerciseIDs: Set<String> = []
+    private var completionDate: Date?
+
     // Walk goal
     @Published public var walkGoal: Int = 10_000
     @Published public var walkGoalSaved: Bool = false
@@ -152,6 +159,7 @@ public final class AppViewModel: ObservableObject {
 
     public func load() async {
         async let planTask = repository.fetchPlan()
+        async let workoutCompletionTask = repository.fetchWorkoutCompletion()
         async let readinessTask = repository.fetchReadiness()
         async let physiqueTask = repository.fetchPhysiqueEntries()
         async let physiqueHeightTask = repository.fetchPhysiqueHeight()
@@ -162,6 +170,10 @@ public final class AppViewModel: ObservableObject {
         async let ouraSnapshotTask = repository.fetchOuraSnapshot()
 
         if let plan = try? await planTask { self.plan = plan }
+        if let completion = try? await workoutCompletionTask, calendar.isDate(completion.date, inSameDayAs: now()) {
+            completedExerciseIDs = Set(completion.exerciseIDs)
+            completionDate = completion.date
+        }
         if let readiness = try? await readinessTask { self.readiness = readiness }
         if let entries = try? await physiqueTask { self.physiqueEntries = entries }
         if let profile = try? await dietProfileTask {
@@ -410,6 +422,53 @@ public final class AppViewModel: ObservableObject {
     private func persistPlan() {
         let snapshot = plan
         Task { try? await repository.savePlan(snapshot) }
+    }
+
+    // MARK: - Actions: Workout completion
+
+    public func toggleExerciseComplete(_ exercise: ExerciseEntry) {
+        resetCompletionIfStale()
+        if completedExerciseIDs.contains(exercise.id) {
+            completedExerciseIDs.remove(exercise.id)
+        } else {
+            completedExerciseIDs.insert(exercise.id)
+        }
+        persistCompletion()
+    }
+
+    /// Powers a single "Mark complete" / "Completed" button: marks every
+    /// exercise in `exercises` complete, unless they already all are, in
+    /// which case it un-marks all of them.
+    public func toggleSessionComplete(_ exercises: [ExerciseEntry]) {
+        resetCompletionIfStale()
+        let ids = Set(exercises.map(\.id))
+        if ids.isSubset(of: completedExerciseIDs) {
+            completedExerciseIDs.subtract(ids)
+        } else {
+            completedExerciseIDs.formUnion(ids)
+        }
+        persistCompletion()
+    }
+
+    /// Called when the app becomes active (alongside
+    /// `refreshOuraIfConnected()`) so a completion checklist left over
+    /// from before midnight clears even if the app was never fully
+    /// relaunched.
+    public func refreshDailyStateIfNeeded() {
+        resetCompletionIfStale()
+    }
+
+    private func resetCompletionIfStale() {
+        guard let completionDate, !calendar.isDate(completionDate, inSameDayAs: now()) else { return }
+        completedExerciseIDs = []
+        self.completionDate = nil
+    }
+
+    private func persistCompletion() {
+        let date = now()
+        completionDate = date
+        let snapshot = WorkoutCompletion(date: date, exerciseIDs: Array(completedExerciseIDs))
+        Task { try? await repository.saveWorkoutCompletion(snapshot) }
     }
 
     // MARK: - Actions: Oura

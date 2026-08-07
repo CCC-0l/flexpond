@@ -186,12 +186,12 @@ private struct TodayPlanSection: View {
             SectionHeader(title: "Today's plan", count: nil)
 
             if let lifting = vm.todaysLiftingSchedule {
-                TodayScheduleCard(item: lifting, onOpen: vm.openLiftingToday) {
+                TodayScheduleCard(item: lifting, vm: vm, onOpen: vm.openLiftingToday) {
                     vm.removeFromPlan(lifting.id)
                 }
             }
             if let cardio = vm.todaysCardioSchedule {
-                TodayScheduleCard(item: cardio, onOpen: vm.openCardioToday) {
+                TodayScheduleCard(item: cardio, vm: vm, onOpen: vm.openCardioToday) {
                     vm.removeFromPlan(cardio.id)
                 }
             }
@@ -208,6 +208,7 @@ private struct TodayPlanSection: View {
 
 private struct TodayScheduleCard: View {
     var item: TodayScheduleItem
+    @ObservedObject var vm: AppViewModel
     var onOpen: () -> Void
     var onRemove: () -> Void
     @State private var showRemoveConfirm = false
@@ -247,7 +248,12 @@ private struct TodayScheduleCard: View {
             if item.isRestDay {
                 RestDayCard()
             } else {
-                ExerciseList(items: item.exercises)
+                ExerciseList(
+                    items: item.exercises,
+                    completedIDs: vm.completedExerciseIDs,
+                    onToggle: { vm.toggleExerciseComplete($0) },
+                    onToggleAll: { vm.toggleSessionComplete(item.exercises) }
+                )
             }
 
             Button { showRemoveConfirm = true } label: {

@@ -206,7 +206,7 @@ do {
 // next run's starting state (e.g. a leftover plan entry from last time
 // throwing off a "count == 1" assertion this run). Clear them first so
 // every run starts from a clean slate.
-for suiteName in ["flexpond.smoke", "flexpond.smoke.today", "flexpond.smoke.mealdate", "flexpond.smoke.mealtimeline", "flexpond.smoke.mealedit", "flexpond.smoke.mealhistory"] {
+for suiteName in ["flexpond.smoke", "flexpond.smoke.today", "flexpond.smoke.completion", "flexpond.smoke.mealdate", "flexpond.smoke.mealtimeline", "flexpond.smoke.mealedit", "flexpond.smoke.mealhistory"] {
     UserDefaults().removePersistentDomain(forName: suiteName)
 }
 
@@ -311,6 +311,44 @@ do {
         check(vm2.todaysCardioSchedule?.sessionLabel == "Zone 2 Base Run", "today's cardio schedule shows Monday's session")
         check(vm2.todaysCardioSchedule?.category == .moderateIntensityCardio, "cardio schedule item carries the right category")
         check(vm2.walkPlanItem == nil, "no walk goal set yet")
+    }
+}
+
+do {
+    var comps = DateComponents()
+    comps.year = 2026; comps.month = 7; comps.day = 6 // Monday, Jul 6 2026 — a training day
+    let calendar = Calendar(identifier: .gregorian)
+    var currentDate = calendar.date(from: comps)!
+    let vm8 = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke.completion")!), calendar: calendar, now: { currentDate })
+    await vm8.load()
+    await MainActor.run {
+        vm8.openCategory(.program(.bodybuilding))
+        vm8.selectFrequency(.fourDay)
+        vm8.selectVariant(0)
+        vm8.startProgram()
+
+        let exercises = vm8.todaysLiftingSchedule?.exercises ?? []
+        check(exercises.count >= 2, "completion test setup has at least 2 exercises to work with")
+        check(vm8.completedExerciseIDs.isEmpty, "completedExerciseIDs starts empty")
+
+        let first = exercises[0]
+        vm8.toggleExerciseComplete(first)
+        check(vm8.completedExerciseIDs.contains(first.id), "toggleExerciseComplete marks one exercise complete")
+        vm8.toggleExerciseComplete(first)
+        check(!vm8.completedExerciseIDs.contains(first.id), "toggling again unmarks it")
+
+        vm8.toggleSessionComplete(exercises)
+        check(exercises.allSatisfy { vm8.completedExerciseIDs.contains($0.id) }, "toggleSessionComplete marks every exercise complete")
+        vm8.toggleSessionComplete(exercises)
+        check(exercises.allSatisfy { !vm8.completedExerciseIDs.contains($0.id) }, "toggleSessionComplete un-marks all when already fully complete")
+
+        // Daily reset: rolling into the next day clears completion.
+        vm8.toggleExerciseComplete(first)
+        check(vm8.completedExerciseIDs.contains(first.id), "re-marks one exercise before advancing the day")
+        currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+        vm8.toggleExerciseComplete(exercises[1]) // any completion action re-checks staleness first
+        check(!vm8.completedExerciseIDs.contains(first.id), "completion resets once the calendar day rolls over")
+        check(vm8.completedExerciseIDs.contains(exercises[1].id), "the new day's toggle still applies normally")
     }
 }
 

@@ -9,6 +9,8 @@ import Foundation
 public protocol WorkoutRepository: Sendable {
     func fetchPlan() async throws -> [PlanItem]
     func savePlan(_ plan: [PlanItem]) async throws
+    func fetchWorkoutCompletion() async throws -> WorkoutCompletion?
+    func saveWorkoutCompletion(_ completion: WorkoutCompletion?) async throws
     func fetchReadiness() async throws -> ReadinessData
     func fetchPhysiqueEntries() async throws -> [PhysiqueEntry]
     func savePhysiqueEntries(_ entries: [PhysiqueEntry]) async throws
@@ -36,6 +38,7 @@ public actor LocalWorkoutRepository: WorkoutRepository {
 
     private enum Key {
         static let plan = "flexpond.plan"
+        static let workoutCompletion = "flexpond.workoutCompletion"
         static let physiqueEntries = "flexpond.physiqueEntries"
         static let physiqueHeight = "flexpond.physiqueHeight"
         static let dietProfile = "flexpond.dietProfile"
@@ -57,6 +60,18 @@ public actor LocalWorkoutRepository: WorkoutRepository {
 
     public func savePlan(_ plan: [PlanItem]) async throws {
         save(plan, forKey: Key.plan)
+    }
+
+    public func fetchWorkoutCompletion() async throws -> WorkoutCompletion? {
+        load(WorkoutCompletion.self, forKey: Key.workoutCompletion)
+    }
+
+    public func saveWorkoutCompletion(_ completion: WorkoutCompletion?) async throws {
+        guard let completion else {
+            defaults.removeObject(forKey: Key.workoutCompletion)
+            return
+        }
+        save(completion, forKey: Key.workoutCompletion)
     }
 
     // MARK: Readiness (static mock — used only pre-Oura-connect)

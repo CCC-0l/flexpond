@@ -13,6 +13,7 @@ struct FlexpondApp: App {
         .onChange(of: scenePhase) { _, newPhase in
             if newPhase == .active {
                 vm.refreshOuraIfConnected()
+                vm.refreshDailyStateIfNeeded()
             }
         }
     }
