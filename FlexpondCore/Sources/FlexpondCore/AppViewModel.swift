@@ -130,6 +130,11 @@ public final class AppViewModel: ObservableObject {
     @Published public var newMealProtein: String = ""
     @Published public var newMealCarb: String = ""
     @Published public var newMealFat: String = ""
+    /// Off by default — a hand-typed meal is as likely to be a one-off
+    /// (eating out, a unique dish) as a repeat food, and only the user
+    /// knows which. Only applies when logging a *new* meal; editing an
+    /// existing entry never touches the library regardless.
+    @Published public var saveToLibrary: Bool = false
     @Published public var editingMealID: String?
 
     public init(
@@ -712,10 +717,12 @@ public final class AppViewModel: ObservableObject {
     public func cancelEditingMeal() { clearMealDraft() }
 
     /// Updates the entry in place if `editingMealID` is set, otherwise
-    /// appends a new one and — since this is a hand-typed *new* food, not a
-    /// re-log from the library — also saves it to `savedFoods` so it's
-    /// reusable next time (deduped by case-insensitive name match, so
-    /// re-typing something already in the library doesn't create a copy).
+    /// appends a new one and — only if `saveToLibrary` is on — also saves
+    /// it to `savedFoods` so it's reusable next time (deduped by
+    /// case-insensitive name match, so re-typing something already in the
+    /// library doesn't create a copy). A one-off meal (eating out, say)
+    /// has no business becoming a permanent library entry, so this is
+    /// opt-in rather than automatic.
     public func saveMeal() {
         guard canAddCustomMeal else { return }
         let name = newMealName.trimmingCharacters(in: .whitespaces)
@@ -729,7 +736,9 @@ public final class AppViewModel: ObservableObject {
             mealLog[index] = MealEntry(id: existing.id, date: existing.date, name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat)
         } else {
             mealLog.append(MealEntry(date: now(), name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat))
-            addToLibraryIfNew(name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat)
+            if saveToLibrary {
+                addToLibraryIfNew(name: name, calories: calories, proteinGrams: protein, carbGrams: carb, fatGrams: fat)
+            }
         }
 
         clearMealDraft()
@@ -749,6 +758,7 @@ public final class AppViewModel: ObservableObject {
         newMealProtein = ""
         newMealCarb = ""
         newMealFat = ""
+        saveToLibrary = false
         editingMealID = nil
     }
 

@@ -297,7 +297,28 @@ struct FlexpondCoreTests {
         #expect(vm.todaysMealTimeline.count == 6)
     }
 
-    @Test @MainActor func saveMealAddsNewCustomFoodToLibraryAndDedupesByName() async {
+    @Test @MainActor func saveMealDoesNotSaveToLibraryUnlessOptedIn() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        let startingCount = vm.savedFoods.count
+        #expect(vm.saveToLibrary == false)
+
+        // A one-off meal (e.g. eating out) shouldn't be saved to the
+        // permanent library by default.
+        vm.newMealName = "Restaurant Dinner"
+        vm.newMealCalories = "800"
+        vm.newMealProtein = "40"
+        vm.newMealCarb = "70"
+        vm.newMealFat = "30"
+        vm.saveMeal()
+
+        #expect(vm.savedFoods.count == startingCount)
+        #expect(vm.mealLog.count == 1)
+        #expect(vm.newMealName == "") // draft cleared after save
+        #expect(vm.saveToLibrary == false) // resets after saving
+    }
+
+    @Test @MainActor func saveMealSavesToLibraryWhenOptedInAndDedupesByName() async {
         let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
         await vm.load()
         let startingCount = vm.savedFoods.count
@@ -307,11 +328,11 @@ struct FlexpondCoreTests {
         vm.newMealProtein = "20"
         vm.newMealCarb = "30"
         vm.newMealFat = "10"
+        vm.saveToLibrary = true
         vm.saveMeal()
 
         #expect(vm.savedFoods.count == startingCount + 1)
         #expect(vm.mealLog.count == 1)
-        #expect(vm.newMealName == "") // draft cleared after save
 
         // Re-logging the same name (case-insensitive) shouldn't duplicate the library entry.
         vm.newMealName = "test custom meal"
@@ -319,6 +340,7 @@ struct FlexpondCoreTests {
         vm.newMealProtein = "20"
         vm.newMealCarb = "30"
         vm.newMealFat = "10"
+        vm.saveToLibrary = true
         vm.saveMeal()
 
         #expect(vm.savedFoods.count == startingCount + 1) // no new library entry
@@ -337,12 +359,13 @@ struct FlexpondCoreTests {
         #expect(vm.editingMealID == entryID)
 
         vm.newMealCalories = "999"
+        vm.saveToLibrary = true // should be ignored — editing never touches the library
         vm.saveMeal()
 
         #expect(vm.mealLog.count == 1) // updated in place, not appended
         #expect(vm.mealLog[0].calories == 999)
         #expect(vm.editingMealID == nil)
-        #expect(vm.savedFoods.count == libraryCountBefore) // editing an existing entry doesn't touch the library
+        #expect(vm.savedFoods.count == libraryCountBefore) // editing doesn't touch the library, even with saveToLibrary on
     }
 
     @Test @MainActor func cancelEditingMealClearsDraftWithoutSaving() async {

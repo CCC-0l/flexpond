@@ -367,24 +367,40 @@ do {
     await vm5.load()
     await MainActor.run {
         let startingCount = vm5.savedFoods.count
+        check(vm5.saveToLibrary == false, "saveToLibrary defaults to off")
+
+        // A one-off meal (e.g. eating out) shouldn't be saved to the
+        // permanent library unless the user opts in.
+        vm5.newMealName = "Restaurant Dinner"
+        vm5.newMealCalories = "800"
+        vm5.newMealProtein = "40"
+        vm5.newMealCarb = "70"
+        vm5.newMealFat = "30"
+        vm5.saveMeal()
+        check(vm5.savedFoods.count == startingCount, "saveMeal does NOT save to the library by default")
+        check(vm5.mealLog.count == 1, "saveMeal logs the entry regardless")
+        check(vm5.newMealName == "", "saveMeal clears the draft")
+        check(vm5.saveToLibrary == false, "saveToLibrary resets to off after saving")
+
         vm5.newMealName = "Test Custom Meal"
         vm5.newMealCalories = "300"
         vm5.newMealProtein = "20"
         vm5.newMealCarb = "30"
         vm5.newMealFat = "10"
+        vm5.saveToLibrary = true
         vm5.saveMeal()
-        check(vm5.savedFoods.count == startingCount + 1, "saveMeal adds a new custom food to the library")
-        check(vm5.mealLog.count == 1, "saveMeal logs the entry")
-        check(vm5.newMealName == "", "saveMeal clears the draft")
+        check(vm5.savedFoods.count == startingCount + 1, "saveMeal saves to the library when opted in")
+        check(vm5.mealLog.count == 2, "saveMeal logs the entry")
 
         vm5.newMealName = "test custom meal"
         vm5.newMealCalories = "300"
         vm5.newMealProtein = "20"
         vm5.newMealCarb = "30"
         vm5.newMealFat = "10"
+        vm5.saveToLibrary = true
         vm5.saveMeal()
         check(vm5.savedFoods.count == startingCount + 1, "re-logging the same name (case-insensitive) doesn't duplicate the library entry")
-        check(vm5.mealLog.count == 2, "but a 2nd log entry was still created")
+        check(vm5.mealLog.count == 3, "but a 2nd log entry was still created")
 
         vm5.logSavedFood(SavedFood.starterLibrary[0])
         let entryID = vm5.mealLog.last!.id
@@ -393,11 +409,12 @@ do {
         check(vm5.newMealName == SavedFood.starterLibrary[0].name, "beginEditingMeal populates the draft")
         check(vm5.editingMealID == entryID, "beginEditingMeal marks the entry as being edited")
         vm5.newMealCalories = "999"
+        vm5.saveToLibrary = true // should be ignored — editing never touches the library
         vm5.saveMeal()
-        check(vm5.mealLog.count == 3, "saveMeal updates the edited entry in place, doesn't append")
+        check(vm5.mealLog.count == 4, "saveMeal updates the edited entry in place, doesn't append")
         check(vm5.mealLog.last?.calories == 999, "edited entry reflects the new value")
         check(vm5.editingMealID == nil, "saveMeal clears editingMealID")
-        check(vm5.savedFoods.count == libraryCountBefore, "editing an existing entry doesn't touch the library")
+        check(vm5.savedFoods.count == libraryCountBefore, "editing an existing entry doesn't touch the library, even with saveToLibrary on")
 
         vm5.beginEditingMeal(vm5.mealLog.last!.id)
         vm5.newMealCalories = "1"

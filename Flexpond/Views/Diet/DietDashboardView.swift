@@ -184,6 +184,21 @@ private struct LogMealForm: View {
                     macroInput("F (g)", text: $vm.newMealFat)
                 }
 
+                if vm.editingMealID == nil {
+                    Toggle(isOn: $vm.saveToLibrary) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Save to food library")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("For meals you'll eat again — leave off for one-offs like eating out.")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Theme.textTertiary)
+                        }
+                    }
+                    .tint(Theme.accent)
+                    .padding(.vertical, 2)
+                }
+
                 Button {
                     vm.saveMeal()
                 } label: {
