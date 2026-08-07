@@ -133,7 +133,7 @@ private struct WalkDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Set your daily step goal. We'll track your progress toward it each day.")
+            Text("Set your daily step goal. Connect Apple Health to track your progress toward it each day.")
                 .font(.system(size: 13))
                 .foregroundStyle(Theme.textSecondary)
                 .lineSpacing(3)
@@ -181,6 +181,89 @@ private struct WalkDetailView: View {
                 systemImage: vm.walkGoalSaved ? "checkmark" : nil,
                 action: vm.saveWalkGoal
             )
+
+            AppleHealthSection(vm: vm)
+        }
+    }
+}
+
+private struct AppleHealthSection: View {
+    @ObservedObject var vm: AppViewModel
+
+    var body: some View {
+        if vm.healthKitConnected {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 8) {
+                    Circle().fill(Theme.good).frame(width: 7, height: 7)
+                    Text("Connected to Apple Health")
+                        .font(.label(11.5))
+                        .foregroundStyle(Theme.textSecondary)
+                    Spacer()
+                    Button(vm.healthKitSyncing ? "Syncing…" : "Sync") { Task { await vm.syncSteps() } }
+                        .font(.label(11))
+                        .foregroundStyle(Theme.accent)
+                        .disabled(vm.healthKitSyncing)
+                    Button("Disconnect") { vm.disconnectHealthKit() }
+                        .font(.label(11))
+                        .foregroundStyle(Theme.textTertiary)
+                }
+                .buttonStyle(.plain)
+
+                if let steps = vm.todaySteps {
+                    VStack(spacing: 7) {
+                        HStack {
+                            Text("\(steps.formatted()) steps today")
+                                .font(.system(size: 13.5, weight: .bold))
+                                .foregroundStyle(Theme.textPrimary)
+                            Spacer()
+                            Text("of \(vm.walkGoal.formatted())")
+                                .font(.label(11))
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        GeometryReader { geo in
+                            Capsule().fill(Color.white.opacity(0.08))
+                                .overlay(alignment: .leading) {
+                                    Capsule().fill(Theme.good).frame(width: geo.size.width * (vm.walkProgress ?? 0))
+                                }
+                        }
+                        .frame(height: 7)
+                    }
+                }
+
+                if let error = vm.healthKitSyncError {
+                    Text(error)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.warning)
+                }
+            }
+            .padding(14)
+            .cardBackground(radius: 16)
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                Button {
+                    Task { await vm.connectHealthKit() }
+                } label: {
+                    Text(vm.healthKitSyncing ? "Connecting…" : "Connect Apple Health")
+                        .font(.system(size: 13.5, weight: .bold))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .foregroundStyle(Theme.accent)
+                        .background(Theme.accent.opacity(0.08))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .strokeBorder(Theme.accent.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
+                        )
+                }
+                .buttonStyle(.plain)
+                .disabled(vm.healthKitSyncing)
+
+                if let error = vm.healthKitSyncError {
+                    Text(error)
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.warning)
+                }
+            }
         }
     }
 }

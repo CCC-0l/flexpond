@@ -75,6 +75,7 @@ public struct DietSummary: Sendable {
 public final class AppViewModel: ObservableObject {
     private let repository: WorkoutRepository
     private let ouraService: OuraService
+    private let healthKitService: HealthKitServicing
     private let calendar: Calendar
     private let now: () -> Date
 
@@ -99,6 +100,12 @@ public final class AppViewModel: ObservableObject {
     // Walk goal
     @Published public var walkGoal: Int = 10_000
     @Published public var walkGoalSaved: Bool = false
+
+    // Apple Health (steps toward the Walk goal)
+    @Published public private(set) var healthKitConnected: Bool = false
+    @Published public private(set) var healthKitSyncing: Bool = false
+    @Published public private(set) var healthKitSyncError: String?
+    @Published public private(set) var todaySteps: Int?
 
     // Readiness (static mock, used only pre-Oura-connect)
     @Published public private(set) var readiness: ReadinessData?
@@ -147,11 +154,13 @@ public final class AppViewModel: ObservableObject {
     public init(
         repository: WorkoutRepository = LocalWorkoutRepository(),
         ouraService: OuraService = OuraService(),
+        healthKitService: HealthKitServicing = HealthKitService(),
         calendar: Calendar = .current,
         now: @escaping () -> Date = Date.init
     ) {
         self.repository = repository
         self.ouraService = ouraService
+        self.healthKitService = healthKitService
         self.calendar = calendar
         self.now = now
         Task { await load() }
@@ -167,6 +176,7 @@ public final class AppViewModel: ObservableObject {
         async let mealLogTask = repository.fetchMealLog()
         async let savedFoodsTask = repository.fetchSavedFoods()
         async let walkGoalTask = repository.fetchWalkGoal()
+        async let healthKitConnectedTask = repository.fetchHealthKitConnected()
         async let ouraSnapshotTask = repository.fetchOuraSnapshot()
 
         if let plan = try? await planTask { self.plan = plan }
@@ -193,6 +203,10 @@ public final class AppViewModel: ObservableObject {
         if let log = try? await mealLogTask { self.mealLog = log }
         if let foods = try? await savedFoodsTask { self.savedFoods = foods }
         if let goal = try? await walkGoalTask { self.walkGoal = goal }
+        if let connected = try? await healthKitConnectedTask, connected {
+            healthKitConnected = true
+            await syncSteps()
+        }
         if let snapshot = try? await ouraSnapshotTask, ouraService.loadToken() != nil {
             ouraConnected = true
             ouraScore = snapshot.score
@@ -539,6 +553,59 @@ public final class AppViewModel: ObservableObject {
         ouraSyncedAt = nil
         ouraConnectOpen = false
         Task { try? await repository.saveOuraSnapshot(nil) }
+    }
+
+    // MARK: - Actions: Apple Health (steps)
+
+    /// Requests read access to step count and, if that succeeds, fetches
+    /// today's count immediately — the "Connect Apple Health" action on
+    /// the Walk goal screen.
+    public func connectHealthKit() async {
+        healthKitSyncing = true
+        healthKitSyncError = nil
+        do {
+            try await healthKitService.requestAuthorization()
+            todaySteps = try await healthKitService.fetchTodaySteps()
+            healthKitConnected = true
+            Task { try? await repository.saveHealthKitConnected(true) }
+        } catch {
+            healthKitSyncError = (error as? LocalizedError)?.errorDescription ?? "Couldn't connect to Apple Health."
+        }
+        healthKitSyncing = false
+    }
+
+    /// Refetches today's step count — the "Sync" action once already connected.
+    public func syncSteps() async {
+        guard healthKitConnected else { return }
+        healthKitSyncing = true
+        healthKitSyncError = nil
+        do {
+            todaySteps = try await healthKitService.fetchTodaySteps()
+        } catch {
+            healthKitSyncError = (error as? LocalizedError)?.errorDescription ?? "Couldn't refresh your steps."
+        }
+        healthKitSyncing = false
+    }
+
+    /// Called whenever the app becomes active, mirroring
+    /// `refreshOuraIfConnected()`, so the step count is fresh without a
+    /// manual sync.
+    public func refreshStepsIfConnected() {
+        guard healthKitConnected else { return }
+        Task { await syncSteps() }
+    }
+
+    public func disconnectHealthKit() {
+        healthKitConnected = false
+        todaySteps = nil
+        healthKitSyncError = nil
+        Task { try? await repository.saveHealthKitConnected(false) }
+    }
+
+    /// Progress toward `walkGoal`, 0...1 — nil until steps have been fetched.
+    public var walkProgress: Double? {
+        guard let todaySteps, walkGoal > 0 else { return nil }
+        return min(1, Double(todaySteps) / Double(walkGoal))
     }
 
     private func applyOuraDay(_ day: OuraReadinessDay) {

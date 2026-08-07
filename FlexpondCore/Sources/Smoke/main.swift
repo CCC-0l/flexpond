@@ -206,8 +206,70 @@ do {
 // next run's starting state (e.g. a leftover plan entry from last time
 // throwing off a "count == 1" assertion this run). Clear them first so
 // every run starts from a clean slate.
-for suiteName in ["flexpond.smoke", "flexpond.smoke.today", "flexpond.smoke.completion", "flexpond.smoke.mealdate", "flexpond.smoke.mealtimeline", "flexpond.smoke.mealedit", "flexpond.smoke.mealhistory"] {
+for suiteName in ["flexpond.smoke", "flexpond.smoke.today", "flexpond.smoke.completion", "flexpond.smoke.mealdate", "flexpond.smoke.mealtimeline", "flexpond.smoke.mealedit", "flexpond.smoke.mealhistory", "flexpond.smoke.healthkit", "flexpond.smoke.healthkitfail"] {
     UserDefaults().removePersistentDomain(forName: suiteName)
+}
+
+// MARK: - Apple Health (steps)
+//
+// The real HKHealthStore calls in HealthKitService can't be exercised
+// outside Xcode at all (no HealthKit on macOS), so these test
+// AppViewModel's connect/sync/disconnect state machine against a fake
+// HealthKitServicing conformer instead.
+
+final class FakeHealthKitService: HealthKitServicing, @unchecked Sendable {
+    var stepsToReturn = 0
+    var authorizationError: Error?
+    private(set) var authorizationRequested = false
+
+    func requestAuthorization() async throws {
+        authorizationRequested = true
+        if let authorizationError { throw authorizationError }
+    }
+
+    func fetchTodaySteps() async throws -> Int {
+        stepsToReturn
+    }
+}
+
+do {
+    let fake = FakeHealthKitService()
+    fake.stepsToReturn = 4200
+    let vmHK = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke.healthkit")!), healthKitService: fake)
+    await vmHK.load()
+    await vmHK.connectHealthKit()
+
+    await MainActor.run {
+        check(fake.authorizationRequested, "connectHealthKit requests authorization")
+        check(vmHK.healthKitConnected, "connectHealthKit marks connected on success")
+        check(vmHK.todaySteps == 4200, "connectHealthKit fetches today's steps")
+        check(vmHK.healthKitSyncError == nil, "connectHealthKit clears any prior error")
+    }
+
+    fake.stepsToReturn = 6500
+    await vmHK.syncSteps()
+
+    await MainActor.run {
+        check(vmHK.todaySteps == 6500, "syncSteps refetches the step count")
+        vmHK.setWalkGoal(5000)
+        check(vmHK.walkProgress == 1.0, "walkProgress clamps at 1.0 rather than going over")
+        vmHK.disconnectHealthKit()
+        check(!vmHK.healthKitConnected, "disconnectHealthKit clears the connected flag")
+        check(vmHK.todaySteps == nil, "disconnectHealthKit clears the cached step count")
+    }
+}
+
+do {
+    let failing = FakeHealthKitService()
+    failing.authorizationError = HealthKitError.unavailable
+    let vmHKFail = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke.healthkitfail")!), healthKitService: failing)
+    await vmHKFail.load()
+    await vmHKFail.connectHealthKit()
+
+    await MainActor.run {
+        check(!vmHKFail.healthKitConnected, "a failed authorization leaves healthKitConnected false")
+        check(vmHKFail.healthKitSyncError != nil, "a failed authorization surfaces an error message")
+    }
 }
 
 let vm = await AppViewModel(repository: LocalWorkoutRepository(defaults: UserDefaults(suiteName: "flexpond.smoke")!))

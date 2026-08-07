@@ -29,6 +29,11 @@ targets:
         UILaunchScreen: {}
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
+        NSHealthShareUsageDescription: "Flexpönd reads your step count to show progress toward your daily Walk goal."
+    entitlements:
+      path: Flexpond/App/Flexpond.entitlements
+      properties:
+        com.apple.developer.healthkit: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.flexpond.app

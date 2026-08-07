@@ -625,4 +625,109 @@ struct FlexpondCoreTests {
         #expect(ReadinessStatus(score: 70) == .balanced)
         #expect(ReadinessStatus(score: 69) == .payAttention)
     }
+
+    // MARK: - Apple Health (steps)
+    //
+    // The real HKHealthStore calls in HealthKitService can't be exercised
+    // outside Xcode at all (no HealthKit on macOS), so these test
+    // AppViewModel's connect/sync/disconnect state machine against a fake
+    // HealthKitServicing conformer instead — genuinely more coverage than
+    // was possible for the equivalent Oura flow, which isn't protocol-backed.
+
+    @Test @MainActor func connectHealthKitFetchesStepsAndPersistsConnection() async {
+        let fake = FakeHealthKitService()
+        fake.stepsToReturn = 4200
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), healthKitService: fake)
+        await vm.load()
+
+        await vm.connectHealthKit()
+        #expect(fake.authorizationRequested)
+        #expect(vm.healthKitConnected)
+        #expect(vm.todaySteps == 4200)
+        #expect(vm.healthKitSyncError == nil)
+    }
+
+    @Test @MainActor func connectHealthKitSurfacesAuthorizationFailure() async {
+        let fake = FakeHealthKitService()
+        fake.authorizationError = HealthKitError.unavailable
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), healthKitService: fake)
+        await vm.load()
+
+        await vm.connectHealthKit()
+        #expect(!vm.healthKitConnected)
+        #expect(vm.healthKitSyncError != nil)
+    }
+
+    @Test @MainActor func syncStepsIsANoOpUntilConnected() async {
+        let fake = FakeHealthKitService()
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), healthKitService: fake)
+        await vm.load()
+
+        await vm.syncSteps()
+        #expect(vm.todaySteps == nil)
+
+        fake.stepsToReturn = 1000
+        await vm.connectHealthKit()
+        fake.stepsToReturn = 6500
+        await vm.syncSteps()
+        #expect(vm.todaySteps == 6500)
+    }
+
+    @Test @MainActor func disconnectHealthKitClearsState() async {
+        let fake = FakeHealthKitService()
+        fake.stepsToReturn = 3000
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), healthKitService: fake)
+        await vm.load()
+        await vm.connectHealthKit()
+        #expect(vm.healthKitConnected)
+
+        vm.disconnectHealthKit()
+        #expect(!vm.healthKitConnected)
+        #expect(vm.todaySteps == nil)
+    }
+
+    @Test @MainActor func walkProgressIsNilWithoutStepsAndClampsAtOne() async {
+        let fake = FakeHealthKitService()
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), healthKitService: fake)
+        await vm.load()
+        #expect(vm.walkProgress == nil)
+
+        vm.setWalkGoal(5000)
+        fake.stepsToReturn = 9000
+        await vm.connectHealthKit()
+        #expect(vm.walkProgress == 1.0) // clamped, not 1.8
+    }
+
+    @Test @MainActor func loadRestoresHealthKitConnectionAndSyncsSteps() async {
+        let repo = LocalWorkoutRepository(defaults: .init(suiteName: #function)!)
+        try? await repo.saveHealthKitConnected(true)
+
+        let fake = FakeHealthKitService()
+        fake.stepsToReturn = 8080
+        let vm = AppViewModel(repository: repo, healthKitService: fake)
+        await vm.load()
+
+        #expect(vm.healthKitConnected)
+        #expect(vm.todaySteps == 8080)
+    }
+}
+
+/// Test double for `HealthKitServicing` — the real HealthKit calls can't
+/// run outside Xcode, so `AppViewModel`'s connect/sync/disconnect logic is
+/// verified against this instead.
+private final class FakeHealthKitService: HealthKitServicing, @unchecked Sendable {
+    var stepsToReturn = 0
+    var authorizationError: Error?
+    var fetchError: Error?
+    private(set) var authorizationRequested = false
+
+    func requestAuthorization() async throws {
+        authorizationRequested = true
+        if let authorizationError { throw authorizationError }
+    }
+
+    func fetchTodaySteps() async throws -> Int {
+        if let fetchError { throw fetchError }
+        return stepsToReturn
+    }
 }

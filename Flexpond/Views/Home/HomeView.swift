@@ -207,7 +207,7 @@ private struct TodayPlanSection: View {
                 }
             }
             if let walk = vm.walkPlanItem {
-                WalkRow(goal: walk.goal, onOpen: vm.openWalk) {
+                WalkRow(goal: walk.goal, vm: vm, onOpen: vm.openWalk) {
                     vm.removeFromPlan(walk.id)
                 }
             }
@@ -289,6 +289,7 @@ private struct TodayScheduleCard: View {
 
 private struct WalkRow: View {
     var goal: Int
+    @ObservedObject var vm: AppViewModel
     var onOpen: () -> Void
     var onRemove: () -> Void
     @State private var showRemoveConfirm = false
@@ -296,18 +297,35 @@ private struct WalkRow: View {
     var body: some View {
         HStack(spacing: 8) {
             Button(action: onOpen) {
-                HStack(spacing: 13) {
-                    IconBadge(text: "WK", size: 40, cornerRadius: 11)
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Walk")
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(Theme.textPrimary)
-                        Text("\(goal.formatted()) steps / day")
-                            .font(.system(size: 12))
-                            .foregroundStyle(Theme.textSecondary)
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 13) {
+                        IconBadge(text: "WK", size: 40, cornerRadius: 11)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Walk")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(Theme.textPrimary)
+                            Text("\(goal.formatted()) steps / day")
+                                .font(.system(size: 12))
+                                .foregroundStyle(Theme.textSecondary)
+                        }
+                        Spacer(minLength: 8)
+                        RowChevron()
                     }
-                    Spacer(minLength: 8)
-                    RowChevron()
+
+                    if vm.healthKitConnected, let steps = vm.todaySteps {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("\(steps.formatted()) steps today")
+                                .font(.label(10.5))
+                                .foregroundStyle(Theme.textSecondary)
+                            GeometryReader { geo in
+                                Capsule().fill(Color.white.opacity(0.08))
+                                    .overlay(alignment: .leading) {
+                                        Capsule().fill(Theme.good).frame(width: geo.size.width * (vm.walkProgress ?? 0))
+                                    }
+                            }
+                            .frame(height: 5)
+                        }
+                    }
                 }
                 .padding(13)
                 .cardBackground(radius: 16)

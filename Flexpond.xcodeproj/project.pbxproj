@@ -68,6 +68,7 @@
 		31F604F4A6BE8CE3DA36206B /* Sparkline.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sparkline.swift; sourceTree = "<group>"; };
 		3D386BDC154DCCF52ECDEBBC /* phys-18wk-front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-18wk-front.png"; sourceTree = "<group>"; };
 		3FED8D3BEBD73BF5A0721BF9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		417696A0A6506367DE03BC46 /* Flexpond.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Flexpond.entitlements; sourceTree = "<group>"; };
 		4B4223F6A6840636BAFF63C5 /* phys-12wk-front.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-12wk-front.png"; sourceTree = "<group>"; };
 		637AE893465BC4160A03CCCB /* phys-18wk-back.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-18wk-back.png"; sourceTree = "<group>"; };
 		63B849367DFF4DD765A9CD2B /* phys-30wk-back.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "phys-30wk-back.png"; sourceTree = "<group>"; };
@@ -159,6 +160,7 @@
 		37A00EE599853FDD08C18AAA /* App */ = {
 			isa = PBXGroup;
 			children = (
+				417696A0A6506367DE03BC46 /* Flexpond.entitlements */,
 				B1A8DB4714945074414968A8 /* FlexpondApp.swift */,
 				3FED8D3BEBD73BF5A0721BF9 /* Info.plist */,
 				014ADC1689495F25EF915F37 /* RootView.swift */,
@@ -509,6 +511,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Flexpond/App/Flexpond.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;
@@ -529,6 +532,7 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = Flexpond/App/Flexpond.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 1;
 				ENABLE_PREVIEWS = YES;

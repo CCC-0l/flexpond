@@ -14,6 +14,7 @@ struct FlexpondApp: App {
             if newPhase == .active {
                 vm.refreshOuraIfConnected()
                 vm.refreshDailyStateIfNeeded()
+                vm.refreshStepsIfConnected()
             }
         }
     }

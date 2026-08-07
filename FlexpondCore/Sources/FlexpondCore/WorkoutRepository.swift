@@ -24,6 +24,8 @@ public protocol WorkoutRepository: Sendable {
     func saveSavedFoods(_ foods: [SavedFood]) async throws
     func fetchWalkGoal() async throws -> Int?
     func saveWalkGoal(_ goal: Int) async throws
+    func fetchHealthKitConnected() async throws -> Bool
+    func saveHealthKitConnected(_ connected: Bool) async throws
     func fetchOuraSnapshot() async throws -> OuraSnapshot?
     func saveOuraSnapshot(_ snapshot: OuraSnapshot?) async throws
 }
@@ -45,6 +47,7 @@ public actor LocalWorkoutRepository: WorkoutRepository {
         static let mealLog = "flexpond.mealLog"
         static let savedFoods = "flexpond.savedFoods"
         static let walkGoal = "flexpond.walkGoal"
+        static let healthKitConnected = "flexpond.healthKitConnected"
         static let ouraSnapshot = "flexpond.ouraSnapshot"
     }
 
@@ -160,6 +163,14 @@ public actor LocalWorkoutRepository: WorkoutRepository {
 
     public func saveWalkGoal(_ goal: Int) async throws {
         defaults.set(goal, forKey: Key.walkGoal)
+    }
+
+    public func fetchHealthKitConnected() async throws -> Bool {
+        defaults.bool(forKey: Key.healthKitConnected)
+    }
+
+    public func saveHealthKitConnected(_ connected: Bool) async throws {
+        defaults.set(connected, forKey: Key.healthKitConnected)
     }
 
     // MARK: Oura snapshot (non-secret only — PAT lives in Keychain via OuraService)
