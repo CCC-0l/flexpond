@@ -12,9 +12,10 @@ public struct WeekDayCell: Identifiable, Sendable {
 }
 
 /// Today's full schedule for one active program (lifting or cardio),
-/// rendered directly on Home — no per-exercise completion tracking (the
-/// redesign dropped that entirely: no checkboxes, no "Complete session",
-/// no progress bars, read-only schedule info only).
+/// rendered directly on Home. `exercises` is paired with
+/// `AppViewModel.completedExerciseIDs` at the view layer for per-exercise
+/// completion tracking (checkboxes, progress, "Mark complete") — this
+/// struct itself only carries the read-only schedule info.
 public struct TodayScheduleItem: Identifiable, Sendable {
     public let id: String
     public let category: ProgramCategory
