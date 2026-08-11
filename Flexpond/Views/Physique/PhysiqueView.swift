@@ -2,6 +2,16 @@ import SwiftUI
 import PhotosUI
 import FlexpondCore
 
+/// New entries are titled with their own date (see
+/// `AppViewModel.addPhysiqueEntry()`), so a caption showing that same
+/// date again right underneath would just be a literal duplicate. Older
+/// entries (the bundled samples, or anything logged before this change)
+/// keep a distinct label like "Day 1" or "Week 6", so their date caption
+/// still carries real information and should stay.
+private func showsDateSeparately(label: String, date: Date) -> Bool {
+    label != date.formatted(date: .abbreviated, time: .omitted)
+}
+
 struct PhysiqueView: View {
     @ObservedObject var vm: AppViewModel
 
@@ -117,9 +127,11 @@ private struct EntryPoseGrid: View {
                     Text(entry.label)
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundStyle(Theme.textPrimary)
-                    Text(entry.date.formatted(date: .abbreviated, time: .omitted))
-                        .font(.label(11))
-                        .foregroundStyle(Theme.accent)
+                    if showsDateSeparately(label: entry.label, date: entry.date) {
+                        Text(entry.date.formatted(date: .abbreviated, time: .omitted))
+                            .font(.label(11))
+                            .foregroundStyle(Theme.accent)
+                    }
                 }
                 Spacer()
                 Button { showDeleteConfirm = true } label: {
@@ -355,9 +367,11 @@ private struct CompareSection: View {
                             Text(option.label)
                                 .font(.system(size: 14.5, weight: .bold))
                                 .foregroundStyle(Theme.textPrimary)
-                            Text(option.date.formatted(date: .abbreviated, time: .omitted))
-                                .font(.label(11))
-                                .foregroundStyle(Theme.textSecondary)
+                            if showsDateSeparately(label: option.label, date: option.date) {
+                                Text(option.date.formatted(date: .abbreviated, time: .omitted))
+                                    .font(.label(11))
+                                    .foregroundStyle(Theme.textSecondary)
+                            }
                         }
                         Spacer()
                         if let number = option.badgeNumber {
@@ -422,9 +436,11 @@ private struct CompareSection: View {
             Text(entry.label)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Theme.textPrimary)
-            Text(entry.date.formatted(date: .abbreviated, time: .omitted))
-                .font(.label(10.5))
-                .foregroundStyle(Theme.accent)
+            if showsDateSeparately(label: entry.label, date: entry.date) {
+                Text(entry.date.formatted(date: .abbreviated, time: .omitted))
+                    .font(.label(10.5))
+                    .foregroundStyle(Theme.accent)
+            }
         }
         .frame(maxWidth: .infinity)
     }

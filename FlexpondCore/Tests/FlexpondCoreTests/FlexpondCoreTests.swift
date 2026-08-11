@@ -278,6 +278,18 @@ struct FlexpondCoreTests {
         #expect(vm.newEntryWeight == "")
     }
 
+    @Test @MainActor func addPhysiqueEntryTitlesTheEntryWithTodaysDate() async {
+        var comps = DateComponents()
+        comps.year = 2026; comps.month = 3; comps.day = 15
+        let calendar = Calendar(identifier: .gregorian)
+        let day = calendar.date(from: comps)!
+
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!), calendar: calendar, now: { day })
+        await vm.load()
+        vm.addPhysiqueEntry()
+        #expect(vm.physiqueEntries.last?.label == day.formatted(date: .abbreviated, time: .omitted))
+    }
+
     @Test @MainActor func addPhysiqueEntryGivesEveryEntryAUniqueID() async {
         let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
         await vm.load()

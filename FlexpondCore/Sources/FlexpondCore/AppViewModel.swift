@@ -680,7 +680,9 @@ public final class AppViewModel: ObservableObject {
     public func addPhysiqueEntry() {
         let entry = PhysiqueEntry(
             id: UUID().uuidString,
-            label: "Set \(physiqueEntries.count + 1)",
+            // Titled by the date it's logged, not a sequence number —
+            // meaningful on its own instead of "Set 5" out of context.
+            label: now().formatted(date: .abbreviated, time: .omitted),
             date: now(),
             weightPounds: Int(newEntryWeight)
         )

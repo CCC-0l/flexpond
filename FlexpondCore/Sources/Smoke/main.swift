@@ -328,6 +328,7 @@ await MainActor.run {
     check(vm.physiqueEntries.count == countBeforeAdd + 1, "addPhysiqueEntry appends one entry")
     check(vm.physiqueEntries.last?.weightPounds == 195, "addPhysiqueEntry uses the draft weight")
     check(vm.newEntryWeight == "", "addPhysiqueEntry clears the draft after use")
+    check(vm.physiqueEntries.last?.label == Date().formatted(date: .abbreviated, time: .omitted), "addPhysiqueEntry titles the entry with today's date, not a sequence number")
 
     let firstNewID = vm.physiqueEntries.last!.id
     vm.newEntryWeight = "196"
