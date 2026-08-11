@@ -829,6 +829,16 @@ public final class AppViewModel: ObservableObject {
         persistSavedFoods()
     }
 
+    /// Edits a library food's macros in place. `logSavedFood(_:)` copies a
+    /// food's values into a new, independent `MealEntry` at log time, so
+    /// this never touches meals already logged from it — only future
+    /// re-logs see the updated numbers.
+    public func updateSavedFood(_ id: String, name: String, calories: Int, proteinGrams: Int, carbGrams: Int, fatGrams: Int) {
+        guard let index = savedFoods.firstIndex(where: { $0.id == id }) else { return }
+        savedFoods[index] = SavedFood(id: id, name: name, calories: calories, proteinGrams: proteinGrams, carbGrams: carbGrams, fatGrams: fatGrams)
+        persistSavedFoods()
+    }
+
     /// Populates the log-meal draft from an existing entry and marks it as
     /// the one being edited — the form (and `saveMeal()`) reuse the same
     /// draft fields for both adding and editing rather than introducing

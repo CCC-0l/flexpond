@@ -522,6 +522,20 @@ do {
         vm5.cancelEditingMeal()
         check(vm5.editingMealID == nil, "cancelEditingMeal clears editingMealID")
         check(vm5.mealLog.last?.calories == 999, "cancelEditingMeal discards the in-progress edit")
+
+        let foodToEdit = vm5.savedFoods.first!
+        let libraryCountBeforeEdit = vm5.savedFoods.count
+        vm5.updateSavedFood(foodToEdit.id, name: "Updated Name", calories: 555, proteinGrams: 44, carbGrams: 33, fatGrams: 22)
+        check(vm5.savedFoods.count == libraryCountBeforeEdit, "updateSavedFood doesn't add or remove entries")
+        let edited = vm5.savedFoods.first { $0.id == foodToEdit.id }
+        check(edited?.name == "Updated Name", "updateSavedFood updates the name")
+        check(edited?.calories == 555, "updateSavedFood updates the calories")
+        check(edited?.proteinGrams == 44 && edited?.carbGrams == 33 && edited?.fatGrams == 22, "updateSavedFood updates the macros")
+
+        let mealLogCountBeforeEdit = vm5.mealLog.count
+        vm5.logSavedFood(SavedFood(id: foodToEdit.id, name: "Updated Name", calories: 555, proteinGrams: 44, carbGrams: 33, fatGrams: 22))
+        check(vm5.mealLog.count == mealLogCountBeforeEdit + 1, "re-logging after the edit uses the updated values")
+        check(vm5.mealLog.last?.calories == 555, "the newly-logged entry reflects the edited food")
     }
 }
 

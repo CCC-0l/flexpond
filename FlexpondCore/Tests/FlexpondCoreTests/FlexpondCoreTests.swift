@@ -431,6 +431,28 @@ struct FlexpondCoreTests {
         #expect(vm.mealLog[0].calories == SavedFood.starterLibrary[0].calories) // unchanged
     }
 
+    @Test @MainActor func updateSavedFoodEditsInPlaceWithoutTouchingPastLogEntries() async {
+        let vm = AppViewModel(repository: LocalWorkoutRepository(defaults: .init(suiteName: #function)!))
+        await vm.load()
+        let food = vm.savedFoods.first!
+        let countBefore = vm.savedFoods.count
+
+        vm.logSavedFood(food) // logged before the edit, at the original values
+
+        vm.updateSavedFood(food.id, name: "Updated Name", calories: 555, proteinGrams: 44, carbGrams: 33, fatGrams: 22)
+
+        #expect(vm.savedFoods.count == countBefore) // edited in place, not added/removed
+        let edited = vm.savedFoods.first { $0.id == food.id }
+        #expect(edited?.name == "Updated Name")
+        #expect(edited?.calories == 555)
+        #expect(edited?.proteinGrams == 44 && edited?.carbGrams == 33 && edited?.fatGrams == 22)
+
+        // The meal already logged from this food keeps its original
+        // snapshot — editing the library entry doesn't rewrite history.
+        #expect(vm.mealLog.last?.name == food.name)
+        #expect(vm.mealLog.last?.calories == food.calories)
+    }
+
     @Test @MainActor func mealHistoryZeroFillsGapDaysAndAveragesSkipThem() async {
         var currentDate = Date()
         let calendar = Calendar.current

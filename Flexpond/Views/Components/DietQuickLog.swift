@@ -45,6 +45,7 @@ struct MacroBars: View {
 
 struct FoodLibraryRow: View {
     @ObservedObject var vm: AppViewModel
+    @State private var editingFood: SavedFood?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -58,12 +59,15 @@ struct FoodLibraryRow: View {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
                         ForEach(vm.savedFoods) { food in
-                            FoodLibraryCard(food: food, onLog: { vm.logSavedFood(food) }, onDelete: { vm.deleteSavedFood(food.id) })
+                            FoodLibraryCard(food: food, onLog: { vm.logSavedFood(food) }, onEdit: { editingFood = food }, onDelete: { vm.deleteSavedFood(food.id) })
                         }
                     }
-                    .padding(.top, 6) // room for the delete badge to overflow the card
+                    .padding(.top, 6) // room for the edit/delete badges to overflow the card
                 }
             }
+        }
+        .sheet(item: $editingFood) { food in
+            EditSavedFoodSheet(food: food, vm: vm)
         }
     }
 }
@@ -71,6 +75,7 @@ struct FoodLibraryRow: View {
 private struct FoodLibraryCard: View {
     var food: SavedFood
     var onLog: () -> Void
+    var onEdit: () -> Void
     var onDelete: () -> Void
     @State private var showDeleteConfirm = false
 
@@ -91,6 +96,16 @@ private struct FoodLibraryCard: View {
             .cardBackground(radius: 14)
         }
         .buttonStyle(.plain)
+        .overlay(alignment: .topLeading) {
+            Button(action: onEdit) {
+                Image(systemName: "pencil.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Theme.textTertiary)
+                    .background(Circle().fill(Theme.background))
+            }
+            .buttonStyle(.plain)
+            .offset(x: -6, y: -6)
+        }
         .overlay(alignment: .topTrailing) {
             Button { showDeleteConfirm = true } label: {
                 Image(systemName: "xmark.circle.fill")
@@ -105,6 +120,93 @@ private struct FoodLibraryCard: View {
             Button("Remove", role: .destructive, action: onDelete)
             Button("Cancel", role: .cancel) {}
         }
+    }
+}
+
+private struct EditSavedFoodSheet: View {
+    let food: SavedFood
+    @ObservedObject var vm: AppViewModel
+    @Environment(\.dismiss) private var dismiss
+
+    @State private var name: String
+    @State private var calories: String
+    @State private var protein: String
+    @State private var carb: String
+    @State private var fat: String
+
+    init(food: SavedFood, vm: AppViewModel) {
+        self.food = food
+        self.vm = vm
+        _name = State(initialValue: food.name)
+        _calories = State(initialValue: String(food.calories))
+        _protein = State(initialValue: String(food.proteinGrams))
+        _carb = State(initialValue: String(food.carbGrams))
+        _fat = State(initialValue: String(food.fatGrams))
+    }
+
+    private var canSave: Bool {
+        !name.trimmingCharacters(in: .whitespaces).isEmpty && (Int(calories) ?? 0) > 0
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 14) {
+                TextField("Food name", text: $name)
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.textPrimary)
+                    .padding(11)
+                    .background(Theme.card)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.hairline, lineWidth: 1))
+
+                HStack(spacing: 8) {
+                    macroInput("Cal", text: $calories)
+                    macroInput("P (g)", text: $protein)
+                    macroInput("C (g)", text: $carb)
+                    macroInput("F (g)", text: $fat)
+                }
+
+                Spacer()
+            }
+            .padding(20)
+            .background(Theme.background.ignoresSafeArea())
+            .navigationTitle("Edit Food")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundStyle(Theme.textSecondary)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        vm.updateSavedFood(
+                            food.id,
+                            name: name.trimmingCharacters(in: .whitespaces),
+                            calories: Int(calories) ?? 0,
+                            proteinGrams: Int(protein) ?? 0,
+                            carbGrams: Int(carb) ?? 0,
+                            fatGrams: Int(fat) ?? 0
+                        )
+                        dismiss()
+                    }
+                    .disabled(!canSave)
+                    .foregroundStyle(canSave ? Theme.accent : Theme.textFaint)
+                }
+            }
+        }
+        .presentationDetents([.medium])
+    }
+
+    private func macroInput(_ placeholder: String, text: Binding<String>) -> some View {
+        TextField(placeholder, text: text)
+            .keyboardType(.numberPad)
+            .multilineTextAlignment(.center)
+            .font(.system(size: 13))
+            .foregroundStyle(Theme.textPrimary)
+            .padding(.vertical, 10)
+            .background(Theme.card)
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Theme.hairline, lineWidth: 1))
     }
 }
 
